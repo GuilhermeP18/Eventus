@@ -1,0 +1,24 @@
+name: Branch name
+
+on:
+  push:
+    branches-ignore: [main, dev, test]   # opcional: nem precisa validar essas
+  pull_request:
+
+jobs:
+  validate_branch_name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [[ "$BRANCH" =~ ^(main|dev|test)$ ]] || \
+             [[ "$BRANCH" =~ ^(feature|fix|bugfix|hotfix|docs|test|refactor)/.+$ ]]; then
+            echo "Branch válida: $BRANCH"
+            exit 0
+          fi
+
+          echo "Branch inválida: $BRANCH"
+          echo "Use: feature/, fix/, bugfix/, hotfix/, docs/, test/ ou refactor/ + descrição"
+          exit 1  
