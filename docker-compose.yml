@@ -1,0 +1,56 @@
+services:
+  # Banco de Dados PostgreSQL
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: eventus-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: eventus_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eventus-network
+
+  # Backend Spring Boot API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eventus-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/eventus_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgrespassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - postgres-db
+    networks:
+      - eventus-network
+
+  # Frontend React + Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eventus-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - eventus-network
+
+networks:
+  eventus-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
