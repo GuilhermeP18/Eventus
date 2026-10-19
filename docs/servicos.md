@@ -53,7 +53,7 @@ Após alterar classes, rotas ou configurações no Java:
 
 ```bash
 # Reconstruir apenas o container do backend e reiniciar
-docker compose build backend --no-cache
+docker compose build backend
 docker compose up -d backend
 ```
 
@@ -62,7 +62,7 @@ Após alterar componentes, estilos ou telas no React:
 
 ```bash
 # Reconstruir apenas o container do frontend e reiniciar
-docker compose build frontend --no-cache
+docker compose build frontend
 docker compose up -d frontend
 ```
 
@@ -70,7 +70,7 @@ docker compose up -d frontend
 Caso tenha feito alterações tanto no backend quanto no frontend:
 
 ```bash
-docker compose build --no-cache
+docker compose build
 docker compose up -d
 ```
 

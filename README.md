@@ -21,7 +21,7 @@ O **Eventus** é um sistema projetado para facilitar o cadastro, organização e
 ## 🛠️ Tecnologias Utilizadas
 
 ### **Frontend**
-* **React 18** + **TypeScript**
+* **React 19** + **TypeScript**
 * **Vite** (Build tool)
 * **Bootstrap 5** (Estilização e componentes)
 * **Nginx** (Servidor web em produção/container)
@@ -49,3 +49,39 @@ Eventus/
 │   └── servicos.md   # Rotas, portas, comandos e guia de execução
 ├── docker-compose.yml # Orquestração dos containers
 └── README.md         # Apresentação principal do repositório
+```
+
+---
+
+## 🚀 Como Executar
+
+### Com Docker
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Frontend em http://localhost:3000, API em http://localhost:8080/api/v1/test.
+
+### Sem Docker
+
+Pré-requisitos: Java 21, Node 20+ e um PostgreSQL local.
+
+1. Crie o banco e copie `.env.example` para `.env`, exportando as variáveis `POSTGRES_DB`, `POSTGRES_USER` e `POSTGRES_PASSWORD` no terminal (use `POSTGRES_HOST` e `POSTGRES_PORT` se o banco não estiver em `localhost:5432`).
+2. Backend:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+3. Frontend (em outro terminal): crie `frontend/.env.local` com `VITE_API_URL=/api/v1`; o Vite encaminha `/api` para `localhost:8080`:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Testes do backend (usam H2, sem necessidade de banco): `cd backend && ./mvnw test`.
