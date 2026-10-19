@@ -1,13 +1,15 @@
-# Build do projeto Spring Boot
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
-COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw && ./mvnw -B dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN ./mvnw -B package
 
-# Imagem leve para execução
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+RUN addgroup -S spring && adduser -S spring -G spring
 COPY --from=build /app/target/*.jar app.jar
+USER spring
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
