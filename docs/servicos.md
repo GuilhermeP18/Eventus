@@ -16,13 +16,13 @@ Documentação dos serviços, rotas de acesso e instruções de infraestrutura d
 
 ## 🗄️ Credenciais do Banco de Dados (PostgreSQL)
 
-Para conexões locais via SGBD (DBeaver, DataGrip, VS Code ou IntelliJ):
+Copie `.env.example` para `.env` e ajuste os valores antes de subir os containers. Para conexões locais via SGBD (DBeaver, DataGrip, VS Code ou IntelliJ):
 
 * **Host:** `localhost`
 * **Porta:** `5432`
-* **Database (Banco):** `eventus_db`
-* **Usuário:** `postgres`
-* **Senha:** `postgrespassword`
+* **Database (Banco):** valor de `POSTGRES_DB` no `.env`
+* **Usuário:** valor de `POSTGRES_USER` no `.env`
+* **Senha:** valor de `POSTGRES_PASSWORD` no `.env`
 * **Driver JDBC:** `org.postgresql.Driver`
 
 ---
@@ -95,7 +95,7 @@ docker compose logs -f frontend
 
 Acessar o terminal do banco de dados PostgreSQL:
 ```bash
-docker exec -it eventus-postgres psql -U postgres -d eventus_db
+docker exec -it eventus-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 Parar e remover todos os serviços:

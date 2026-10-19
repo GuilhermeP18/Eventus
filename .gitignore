@@ -34,3 +34,5 @@ build/
 
 ### Instruções locais ###
 CLAUDE.md
+
+.env
