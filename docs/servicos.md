@@ -10,20 +10,13 @@ Documentação dos serviços, rotas de acesso e instruções de infraestrutura d
 | :--- | :--- | :--- | :--- |
 | **Frontend** | [http://localhost:3000](http://localhost:3000) | `3000` | Interface visual SPA em **React + TypeScript + Bootstrap 5**, servida via Nginx. |
 | **Backend API** | [http://localhost:8080/api/v1/test](http://localhost:8080/api/v1/test) | `8080` | API REST em **Spring Boot 3 + Java 21** com Spring Security. |
-| **Banco de Dados** | `localhost:5432` | `5432` | Banco de dados relacional **PostgreSQL 16**. |
+| **Banco de Dados** | Arquivo `backend/data/eventus` | — | Banco **H2** em arquivo, embutido no backend (sem container próprio). |
 
 ---
 
-## 🗄️ Credenciais do Banco de Dados (PostgreSQL)
+## 🗄️ Credenciais do Banco de Dados
 
-Copie `.env.example` para `.env` e ajuste os valores antes de subir os containers. Para conexões locais via SGBD (DBeaver, DataGrip, VS Code ou IntelliJ):
-
-* **Host:** `localhost`
-* **Porta:** `5432`
-* **Database (Banco):** valor de `POSTGRES_DB` no `.env`
-* **Usuário:** valor de `POSTGRES_USER` no `.env`
-* **Senha:** valor de `POSTGRES_PASSWORD` no `.env`
-* **Driver JDBC:** `org.postgresql.Driver`
+Não há credenciais de banco a configurar: o H2 é de uso estritamente local, com usuário `sa` e senha vazia. Os dados ficam no arquivo `backend/data/eventus` (ou `/app/data` dentro do container, persistido no volume `h2_data`).
 
 ---
 
@@ -93,9 +86,9 @@ Acompanhar os logs do frontend em tempo real:
 docker compose logs -f frontend
 ```
 
-Acessar o terminal do banco de dados PostgreSQL:
+Listar o arquivo do banco H2 dentro do container do backend:
 ```bash
-docker exec -it eventus-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+docker compose exec backend ls -la /app/data
 ```
 
 Parar e remover todos os serviços:

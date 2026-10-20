@@ -4,7 +4,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![H2](https://img.shields.io/badge/H2_Database-09476B?style=for-the-badge&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Bootstrap 5](https://img.shields.io/badge/Bootstrap_5-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 
@@ -34,7 +34,7 @@ O **Eventus** é um sistema projetado para facilitar o cadastro, organização e
 * **Lombok**
 
 ### **Banco de Dados & Infraestrutura**
-* **PostgreSQL 16**
+* **H2 Database** (arquivo local em `backend/data`)
 * **Docker** & **Docker Compose**
 
 ---
@@ -66,17 +66,16 @@ Frontend em http://localhost:3000, API em http://localhost:8080/api/v1/test.
 
 ### Sem Docker
 
-Pré-requisitos: Java 21, Node 20+ e um PostgreSQL local.
+Pré-requisitos: Java 21 e Node 20+. O banco H2 é criado automaticamente em `backend/data`, sem configuração adicional.
 
-1. Crie o banco e copie `.env.example` para `.env`, exportando as variáveis `POSTGRES_DB`, `POSTGRES_USER` e `POSTGRES_PASSWORD` no terminal (use `POSTGRES_HOST` e `POSTGRES_PORT` se o banco não estiver em `localhost:5432`).
-2. Backend:
+1. Backend:
 
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-3. Frontend (em outro terminal): crie `frontend/.env.local` com `VITE_API_URL=/api/v1`; o Vite encaminha `/api` para `localhost:8080`:
+2. Frontend (em outro terminal): crie `frontend/.env.local` com `VITE_API_URL=/api/v1`; o Vite encaminha `/api` para `localhost:8080`:
 
 ```bash
 cd frontend
