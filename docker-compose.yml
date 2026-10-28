@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eventus-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - h2_data:/app/data
+    networks:
+      - eventus-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+    container_name: eventus-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - eventus-network
+
+networks:
+  eventus-network:
+    driver: bridge
+
+volumes:
+  h2_data:
