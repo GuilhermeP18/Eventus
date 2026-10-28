@@ -84,3 +84,25 @@ npm run dev
 ```
 
 Testes do backend (usam H2, sem necessidade de banco): `cd backend && ./mvnw test`.
+
+---
+
+## 🎨 Protótipo de referência (Lovable)
+
+Referência visual do frontend, copiada do Lovable. Não é o sistema de produção e não roda no Docker nem no CI.
+
+Pré-requisito: Node.js 20 ou superior.
+
+A partir da raiz do repositório:
+
+```bash
+cd prototipo
+npm install
+npm run dev
+```
+
+O `npm install` é necessário só na primeira vez. Depois, acesse http://localhost:5173.
+
+O protótipo não usa backend nem banco. O cadastro e o login são simulados no navegador.
+
+Mais detalhes em [prototipo/README.md](prototipo/README.md).
