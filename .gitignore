@@ -34,3 +34,9 @@ build/
 
 ### Instruções locais ###
 CLAUDE.md
+
+.env
+
+### Banco H2 local ###
+/backend/data/
+data/
