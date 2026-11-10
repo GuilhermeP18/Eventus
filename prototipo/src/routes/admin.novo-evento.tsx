@@ -16,8 +16,10 @@ import imgShow from "@/assets/ev-show.jpg";
 export const Route = createFileRoute("/admin/novo-evento")({
   ssr: false,
   // Sem sessão, redireciona para o login guardando o destino em redirect.
-  beforeLoad: () => {
-    if (!getCurrentUser()) throw redirect({ to: "/login", search: { redirect: "/admin/novo-evento" } });
+  beforeLoad: async () => {
+    const user = await getCurrentUser();
+    if (!user) throw redirect({ to: "/login", search: { redirect: "/admin/novo-evento" } });
+    if (!user.canCreateEvents) throw redirect({ to: "/meus-ingressos" });
   },
   head: () => ({
     meta: [

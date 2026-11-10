@@ -87,22 +87,27 @@ Testes do backend (usam H2, sem necessidade de banco): `cd backend && ./mvnw tes
 
 ---
 
-## 🎨 Protótipo de referência (Lovable)
+## 🎨 Frontend de trabalho (protótipo Lovable)
 
-Referência visual do frontend, copiada do Lovable. Não é o sistema de produção e não roda no Docker nem no CI.
+O diretório `prototipo/` contém as telas usadas nesta etapa para cadastro, login, painel e eventos. A autenticação foi conectada ao backend Spring Boot; os demais dados de eventos do protótipo ainda ficam na store local.
 
 Pré-requisito: Node.js 20 ou superior.
 
-A partir da raiz do repositório:
+Inicie o backend em um terminal:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+Em outro terminal, inicie o frontend:
 
 ```bash
 cd prototipo
-npm install
+npm ci
 npm run dev
 ```
 
-O `npm install` é necessário só na primeira vez. Depois, acesse http://localhost:5173.
-
-O protótipo não usa backend nem banco. O cadastro e o login são simulados no navegador.
+O Vite encaminha `/api` para o backend em `localhost:8080`. Acesse http://localhost:5173. O `docker compose` ainda serve o app separado de `frontend/`; ele não usa estas telas do protótipo.
 
 Mais detalhes em [prototipo/README.md](prototipo/README.md).

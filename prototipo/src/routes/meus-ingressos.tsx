@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { CalendarDays, Download, MapPin, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,9 +9,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckinPanel } from "@/components/CheckinPanel";
 import { MyEventsPanel } from "@/components/MyEventsPanel";
+import { getCurrentUser } from "@/lib/auth";
 import { useStore, type EventItem, type Ticket } from "@/lib/store";
 
 export const Route = createFileRoute("/meus-ingressos")({
+  ssr: false,
+  beforeLoad: async () => {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw redirect({ to: "/login", search: { redirect: "/meus-ingressos" } });
+    }
+    useStore.getState().setMyEmail(user.email);
+    useStore.getState().setProfile({ name: user.name, email: user.email, phone: user.phone, birthDate: user.birthDate });
+  },
   validateSearch: (search: Record<string, unknown>): { aba?: "portaria" | "meus-eventos" } => {
     const aba = search["aba"];
     return aba === "portaria" || aba === "meus-eventos" ? { aba } : {};
