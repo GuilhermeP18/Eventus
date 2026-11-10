@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  LOCK_MINUTES,
-  MAX_ATTEMPTS,
   destinationFor,
-  getLockRemainingMs,
   login,
   parseRedirectSearch,
 } from "@/lib/auth";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => parseRedirectSearch(search),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; registered?: boolean } => ({
+    ...parseRedirectSearch(search),
+    ...(search["registered"] === true || search["registered"] === "true" ? { registered: true } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Entrar — Eventus" },
@@ -25,26 +26,23 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, registered } = Route.useSearch();
   const router = useRouter();
+  const setMyEmail = useStore((state) => state.setMyEmail);
+  const setProfile = useStore((state) => state.setProfile);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [needsVerification, setNeedsVerification] = useState(false);
   const [lockMs, setLockMs] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLockMs(getLockRemainingMs(email));
-  }, [email]);
-
-  useEffect(() => {
     if (lockMs <= 0) return;
     const timer = window.setInterval(() => {
-      setLockMs(getLockRemainingMs(email));
+      setLockMs((remaining) => Math.max(0, remaining - 1000));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [lockMs > 0, email]);
+  }, [lockMs > 0]);
 
   const locked = lockMs > 0;
   const lockLabel = `${Math.floor(lockMs / 60000)}:${String(Math.floor((lockMs % 60000) / 1000)).padStart(2, "0")}`;
@@ -54,17 +52,28 @@ function LoginPage() {
     if (loading) return;
     setLoading(true);
     setError(null);
-    setNeedsVerification(false);
-    const result = await login(email, password);
-    setLoading(false);
-    if (result.ok) {
-      router.history.push(redirect ?? destinationFor(result.user.role));
-      return;
+    try {
+      const result = await login(email, password);
+      if (result.ok) {
+        setMyEmail(result.user.email);
+        setProfile({
+          name: result.user.name,
+          email: result.user.email,
+          phone: result.user.phone,
+          birthDate: result.user.birthDate,
+        });
+        window.dispatchEvent(new Event("eventus:auth-change"));
+        router.history.push(redirect ?? destinationFor(result.user));
+        return;
+      }
+      setError(result.message);
+      setLockMs(result.retryAfterMs ?? 0);
+      setPassword("");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Não foi possível concluir o login.");
+    } finally {
+      setLoading(false);
     }
-    setError(result.message);
-    setNeedsVerification(result.reason === "unverified");
-    setLockMs(getLockRemainingMs(email));
-    setPassword("");
   };
 
   return (
@@ -73,12 +82,28 @@ function LoginPage() {
         <p className="mb-2 text-sm font-semibold text-primary">Minha conta</p>
         <h1 className="text-2xl font-bold">Entrar</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Autenticação simulada neste navegador. Depois de entrar, você vai para o destino pedido ou para a tela do seu perfil.
+          Entre para acessar seus ingressos e organizar eventos.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-5" noValidate>
+          {registered && (
+            <p className="rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success" role="status">
+              Cadastro concluído. Entre com seu e-mail e senha para continuar.
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="login-email">E-mail</Label>
-            <Input id="login-email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setLockMs(0);
+                setError(null);
+              }}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="login-password">Senha</Label>
@@ -87,20 +112,11 @@ function LoginPage() {
           {locked && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/40 p-3 text-sm text-destructive" role="alert">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>Login bloqueado para este e-mail por {LOCK_MINUTES} minutos após {MAX_ATTEMPTS} tentativas incorretas. Tente novamente em {lockLabel}.</p>
+              <p>Login bloqueado para este e-mail após 5 tentativas incorretas. Tente novamente em {lockLabel}.</p>
             </div>
           )}
           {error && !locked && (
             <p className="text-sm text-destructive" role="alert">{error}</p>
-          )}
-          {needsVerification && (
-            <Link
-              to="/verificar-email"
-              search={redirect ? { email: email.trim().toLowerCase(), redirect } : { email: email.trim().toLowerCase() }}
-              className="flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
-            >
-              Ir para a verificação de e-mail
-            </Link>
           )}
           <Button type="submit" className="w-full" disabled={loading || locked || !email.trim() || !password}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}

@@ -9,12 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { getCurrentUser } from "@/lib/auth";
 
-// Rota /painel: exige usuário logado e roda só no cliente, onde fica o localStorage.
+// A sessão é validada na API; os dados restantes do protótipo ficam no navegador.
 export const Route = createFileRoute("/painel")({
   ssr: false,
   // Sem sessão, redireciona para o login guardando o destino em redirect.
-  beforeLoad: () => {
-    if (!getCurrentUser()) throw redirect({ to: "/login", search: { redirect: "/painel" } });
+  beforeLoad: async () => {
+    if (!await getCurrentUser()) throw redirect({ to: "/login", search: { redirect: "/painel" } });
   },
   head: () => ({
     meta: [

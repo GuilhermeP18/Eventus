@@ -10,6 +10,7 @@ Documentação dos serviços, rotas de acesso e instruções de infraestrutura d
 | :--- | :--- | :--- | :--- |
 | **Frontend** | [http://localhost:3000](http://localhost:3000) | `3000` | Interface visual SPA em **React + TypeScript + Bootstrap 5**, servida via Nginx. |
 | **Backend API** | [http://localhost:8080/api/v1/test](http://localhost:8080/api/v1/test) | `8080` | API REST em **Spring Boot 3 + Java 21** com Spring Security. |
+| **Frontend de trabalho** | [http://localhost:5173](http://localhost:5173) | `5173` | Protótipo React/TanStack executado com Vite; proxy `/api` para o backend em desenvolvimento. |
 | **Banco de Dados** | Arquivo `backend/data/eventus` | — | Banco **H2** em arquivo, embutido no backend (sem container próprio). |
 
 ---
@@ -25,8 +26,14 @@ Não há credenciais de banco a configurar: o H2 é de uso estritamente local, c
 | Método | Endpoint | Acesso | Descrição |
 | :---: | :--- | :---: | :--- |
 | `GET` | `/api/v1/test` | Público | Endpoint de verificação de status (*Health Check*) da API. |
+| `POST` | `/api/v1/auth/register` | Público | Cria conta, valida CPF/e-mail e exige responsável adulto já cadastrado para menores de 18 anos. |
+| `POST` | `/api/v1/auth/login` | Público | Autentica e inicia sessão HTTP; 5 falhas bloqueiam o e-mail por 15 minutos. |
+| `GET` | `/api/v1/auth/me` | Sessão | Retorna o usuário autenticado e se pode organizar eventos (18 anos ou mais). |
+| `POST` | `/api/v1/auth/logout` | Sessão | Encerra a sessão autenticada. |
 
 ---
+
+As senhas são armazenadas com BCrypt. A sessão usa cookie HttpOnly e SameSite=Lax. Para servir a aplicação atrás de HTTPS, configure `SESSION_COOKIE_SECURE=true`. A verificação de e-mail está adiada; contas recém-criadas ficam ativas até a integração com um serviço de e-mail.
 
 ## 🚀 Como Executar o Projeto
 

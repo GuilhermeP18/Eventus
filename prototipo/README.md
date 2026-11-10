@@ -1,24 +1,31 @@
-# Protótipo de referência do frontend (Lovable)
+# Frontend de trabalho (origem Lovable)
 
 **Origem:** projeto Lovable "EventFlow Pro", ID `e8c1c811-dbc0-5395-80b8-f053d6ce967f`, commit de referência `e55c4c3141fbe96df770bbc1e53d3e3c93c58921`.
 
-> Referência visual. Não é executado no CI nem no Docker. A implementação de produção fica em `frontend/`.
+Este é o frontend usado no desenvolvimento dos fluxos de autenticação. O cadastro e o login se comunicam com a API Spring Boot; os dados de eventos ainda usam a store local do protótipo.
 
 ## Como executar
 
 Pré-requisito: Node.js 20 ou superior (referência: `frontend/Dockerfile`) e npm.
 
+Inicie a API em um terminal:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+Inicie o frontend em outro terminal:
+
 ```bash
 cd prototipo
-npm install
+npm ci
 npm run dev
 ```
 
-O `npm install` só é necessário na primeira vez. Depois, acesse http://localhost:5173.
+O Vite encaminha `/api` para `http://localhost:8080`. Acesse http://localhost:5173.
 
-O protótipo não usa Docker, banco nem backend. O cadastro e o login são simulados no navegador.
-
-O protótipo não roda junto com o `docker compose`, que usa a porta 8080 para a API.
+O banco H2 do backend persiste os usuários. A store dos eventos, ingressos e compras do protótipo continua no navegador. O `docker compose` ainda usa o app separado de `frontend/`; para testar estas telas, rode o diretório `prototipo` com Vite.
 
 ## Telas (`src/routes/`)
 
@@ -29,7 +36,7 @@ O protótipo não roda junto com o `docker compose`, que usa a porta 8080 para a
 - `meus-ingressos.tsx` — ingressos, meus eventos e portaria (abas)
 - `painel.tsx` — painel pessoal (perfil e segurança), protegido por login
 - `admin.novo-evento.tsx` — criação de evento, protegido por login
-- `login.tsx`, `cadastro.tsx`, `verificar-email.tsx` — autenticação simulada
+- `login.tsx`, `cadastro.tsx`, `verificar-email.tsx` — autenticação conectada à API; verificação de e-mail adiada
 - `admin.eventos.$id.tsx` — gestão do evento (vendas, extrato, participantes)
 - `admin.index.tsx` — redireciona para a aba "Meus eventos"
 - `admin.checkin.tsx` — redireciona para a aba "Portaria"
@@ -49,25 +56,20 @@ O protótipo não roda junto com o `docker compose`, que usa a porta 8080 para a
 ## Outros
 
 - `src/lib/store.ts` — estado (zustand) com dados de exemplo
-- `src/lib/auth.ts` — cadastro, login e logout simulados em `localStorage`
+- `src/lib/auth.ts` — cliente da API de cadastro, login, sessão e logout
 - `src/lib/utils.ts`
 - `src/hooks/use-mobile.tsx`
 - `src/styles.css` — tema e tokens
 
-## Autenticação simulada (RN001-RN007)
+## Autenticação integrada
 
-Tudo roda no navegador, sem backend e sem segurança real. Os dados ficam em `localStorage` (`eventus.auth.*`). A senha é guardada como SHA-256 com salt (`crypto.subtle`), nunca em texto puro. O código de verificação de e-mail é gerado no cliente e exibido na tela, sem envio real.
+| Método | Endpoint | Comportamento |
+| --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | Valida dados, CPF/e-mail únicos, senha e responsável já cadastrado para menores de 18 anos |
+| `POST` | `/api/v1/auth/login` | Inicia sessão HTTP; falhas usam mensagem genérica e 5 tentativas bloqueiam o e-mail por 15 minutos |
+| `GET` | `/api/v1/auth/me` | Retorna o usuário da sessão e informa se tem 18 anos para organizar eventos |
+| `POST` | `/api/v1/auth/logout` | Invalida a sessão |
 
-| RN | Onde aparece |
-| --- | --- |
-| RN001 | Após login ou verificação, vai para o destino de `?redirect=`; sem destino, cliente vai para `/meus-ingressos` e organizador e funcionário vão para `/painel` |
-| RN002 | `login.tsx` mostra "E-mail ou senha incorretos" sem indicar o campo errado |
-| RN003 | 5 erros seguidos no mesmo e-mail bloqueiam o login por 15 minutos, com contagem regressiva |
-| RN004 | Conta sem e-mail verificado não entra; `login.tsx` aponta para `verificar-email.tsx` |
-| RN005 | `cadastro.tsx` recusa e-mail ou CPF já cadastrados, com aviso enquanto digita |
-| RN006 | Não coberta: a recuperação de senha não faz parte desta etapa |
-| RN007 | Data de nascimento obrigatória; menores de 13 anos são bloqueados, com a idade exibida |
+As senhas são armazenadas com BCrypt no backend. A sessão usa cookie HttpOnly. A conta não possui papel fixo: adultos podem participar e organizar eventos; menores precisam indicar o e-mail de um responsável adulto que já tenha conta e não podem criar eventos. A API calcula a idade a partir da data de nascimento.
 
-### Rotas protegidas
-
-`/painel` e `/admin/novo-evento` usam `beforeLoad` e redirecionam para `/login?redirect=<rota>` sem usuário logado. As demais rotas continuam abertas.
+O envio de verificação por e-mail (RN004) foi adiado conforme decisão do escopo atual; por isso, contas novas ficam ativas após o cadastro. Recuperação de senha (RN006) também permanece fora desta etapa. As rotas `/painel`, `/meus-ingressos` e de gestão/criação de eventos exigem sessão; a criação/gestão de eventos exige usuário maior de idade.

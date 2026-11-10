@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { Download, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { brl, useStore } from "@/lib/store";
+import { getCurrentUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin/eventos/$id")({
+  ssr: false,
+  beforeLoad: async ({ params }) => {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw redirect({ to: "/login", search: { redirect: `/admin/eventos/${params.id}` } });
+    }
+    if (!user.canCreateEvents) throw redirect({ to: "/meus-ingressos" });
+  },
   head: () => ({
     meta: [
       { title: "Gestão do evento — Eventus" },
