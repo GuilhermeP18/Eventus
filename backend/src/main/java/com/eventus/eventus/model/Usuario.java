@@ -36,6 +36,10 @@ public class Usuario {
     @Column(nullable = false)
     private LocalDate dataNascimento;
 
+    /** Só dígitos (10 ou 11). Opcional. */
+    @Column(length = 11)
+    private String telefone;
+
     /** Hash BCrypt, nunca a senha em texto. */
     @Column(nullable = false)
     private String senha;

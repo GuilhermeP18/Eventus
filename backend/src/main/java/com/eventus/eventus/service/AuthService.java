@@ -1,5 +1,6 @@
 package com.eventus.eventus.service;
 
+import com.eventus.eventus.dto.AtualizarPerfilRequest;
 import com.eventus.eventus.dto.CadastroRequest;
 import com.eventus.eventus.dto.LoginRequest;
 import com.eventus.eventus.dto.TokenResponse;
@@ -38,10 +39,7 @@ public class AuthService {
     }
 
     public UsuarioResponse cadastrar(CadastroRequest req) {
-        int idade = Period.between(req.dataNascimento(), LocalDate.now(clock)).getYears();
-        if (idade < IDADE_MINIMA) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "É necessário ter pelo menos 18 anos para se cadastrar");
-        }
+        validarIdade(req.dataNascimento());
 
         String email = normalizarEmail(req.email());
         String cpf = req.cpf().replaceAll("\\D", "");
@@ -53,8 +51,24 @@ public class AuthService {
         usuario.setNome(req.nome().trim());
         usuario.setEmail(email);
         usuario.setCpf(cpf);
+        usuario.setTelefone(req.telefone());
         usuario.setDataNascimento(req.dataNascimento());
         usuario.setSenha(encoder.encode(req.senha()));
+        usuario.setEndereco(req.endereco().paraEntidade());
+        return UsuarioResponse.de(usuarios.save(usuario));
+    }
+
+    public UsuarioResponse perfil(String email) {
+        return UsuarioResponse.de(buscarUsuario(email));
+    }
+
+    /** Atualiza só os dados pessoais. E-mail, CPF e senha não mudam por aqui. */
+    public UsuarioResponse atualizarPerfil(String email, AtualizarPerfilRequest req) {
+        validarIdade(req.dataNascimento());
+        Usuario usuario = buscarUsuario(email);
+        usuario.setNome(req.nome().trim());
+        usuario.setTelefone(req.telefone());
+        usuario.setDataNascimento(req.dataNascimento());
         usuario.setEndereco(req.endereco().paraEntidade());
         return UsuarioResponse.de(usuarios.save(usuario));
     }
@@ -71,6 +85,17 @@ public class AuthService {
 
         tentativas.registrarSucesso(email);
         return TokenResponse.bearer(jwt.gerar(usuario.getEmail()));
+    }
+
+    private void validarIdade(LocalDate nascimento) {
+        if (Period.between(nascimento, LocalDate.now(clock)).getYears() < IDADE_MINIMA) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "É necessário ter pelo menos 18 anos");
+        }
+    }
+
+    private Usuario buscarUsuario(String email) {
+        return usuarios.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Usuário do token não existe mais"));
     }
 
     private static String normalizarEmail(String email) {
