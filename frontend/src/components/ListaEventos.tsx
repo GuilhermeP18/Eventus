@@ -46,6 +46,7 @@ export function ListaEventos() {
           {eventos.map((evento) => (
             <div key={evento.id} className="col-md-6 col-lg-4">
               <div className="card-eventus h-100 d-flex flex-column">
+                {evento.imagemUrl && <img className="evento-capa" src={evento.imagemUrl} alt="" />}
                 <h3 className="h5">{evento.titulo}</h3>
                 <p className="text-muted mb-1">{formatarDataHora(evento.data)}</p>
                 <p className="text-muted">{evento.local}</p>
