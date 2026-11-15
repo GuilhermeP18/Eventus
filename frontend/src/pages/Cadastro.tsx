@@ -9,12 +9,14 @@ import { hojeISO } from '../utils/datas';
 const inicial = {
   nome: '',
   email: '',
+  telefone: '',
   cpf: '',
   dataNascimento: '',
   senha: '',
   cep: '',
   rua: '',
   numero: '',
+  complemento: '',
   bairro: '',
   cidade: '',
   uf: '',
@@ -32,6 +34,7 @@ function validar(f: Form): Record<string, string> {
   const e: Record<string, string> = {};
   if (!f.nome.trim()) e.nome = 'Informe o nome';
   if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) e.email = 'Informe um e-mail válido';
+  if (f.telefone && !/^\d{10,11}$/.test(f.telefone.replace(/\D/g, ''))) e.telefone = 'Telefone deve ter 10 ou 11 dígitos';
   if (f.cpf.replace(/\D/g, '').length !== 11) e.cpf = 'CPF deve ter 11 dígitos';
   if (!f.dataNascimento) e.dataNascimento = 'Informe a data de nascimento';
   else if (f.dataNascimento > hojeISO(18)) e.dataNascimento = 'É necessário ter pelo menos 18 anos';
@@ -75,6 +78,7 @@ export function Cadastro() {
       await http.post('/auth/cadastro', {
         nome: form.nome.trim(),
         email: form.email.trim(),
+        telefone: form.telefone.replace(/\D/g, '') || null,
         cpf: form.cpf,
         dataNascimento: form.dataNascimento,
         senha: form.senha,
@@ -82,6 +86,7 @@ export function Cadastro() {
           cep: form.cep,
           rua: form.rua,
           numero: form.numero,
+          complemento: form.complemento.trim() || null,
           bairro: form.bairro,
           cidade: form.cidade,
           uf: form.uf,
@@ -119,20 +124,22 @@ export function Cadastro() {
           <div className="row">
             <div className="col-md-6">{campo('nome', 'Nome', { autoComplete: 'name' })}</div>
             <div className="col-md-6">{campo('email', 'E-mail', { type: 'email', autoComplete: 'email' })}</div>
+            <div className="col-md-4">{campo('telefone', 'Telefone', { type: 'tel', autoComplete: 'tel', maxLength: 15 })}</div>
             <div className="col-md-4">{campo('cpf', 'CPF', { maxLength: 14 })}</div>
             <div className="col-md-4">{campo('dataNascimento', 'Data de nascimento', { type: 'date' })}</div>
-            <div className="col-md-4">
+            <div className="col-md-6">
               {campo('senha', 'Senha', { type: 'password', autoComplete: 'new-password' })}
             </div>
           </div>
 
           <h2 className="h5 mt-2">Endereço</h2>
           <div className="row">
-            <div className="col-md-4">{campo('cep', 'CEP', { maxLength: 9 })}</div>
+            <div className="col-md-3">{campo('cep', 'CEP', { maxLength: 9 })}</div>
             <div className="col-md-6">{campo('rua', 'Rua')}</div>
-            <div className="col-md-2">{campo('numero', 'Número')}</div>
-            <div className="col-md-5">{campo('bairro', 'Bairro')}</div>
-            <div className="col-md-5">{campo('cidade', 'Cidade')}</div>
+            <div className="col-md-3">{campo('numero', 'Número')}</div>
+            <div className="col-md-4">{campo('complemento', 'Complemento', { maxLength: 100 })}</div>
+            <div className="col-md-3">{campo('bairro', 'Bairro')}</div>
+            <div className="col-md-3">{campo('cidade', 'Cidade')}</div>
             <div className="col-md-2">{campo('uf', 'UF', { maxLength: 2 })}</div>
           </div>
 

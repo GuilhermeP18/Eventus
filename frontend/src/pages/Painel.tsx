@@ -4,7 +4,7 @@ import { lerErro } from '../api/erros';
 import { Campo } from '../components/Campo';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Loading } from '../components/Loading';
-import { useAuth } from '../auth/useAuth';
+import { DadosPessoais } from '../components/DadosPessoais';
 import { formatarData, hojeISO } from '../utils/datas';
 
 interface Dependente {
@@ -13,11 +13,8 @@ interface Dependente {
   dataNascimento: string;
 }
 
-const SEM_DADO = 'Dados completos em breve';
-
 export function Painel() {
-  const { user } = useAuth();
-  const [aba, setAba] = useState<'dependentes' | 'dados'>('dependentes');
+  const [aba, setAba] = useState<'dependentes' | 'dados' | 'seguranca'>('dependentes');
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,24 +87,20 @@ export function Painel() {
               Dados pessoais
             </button>
           </li>
+          <li className="nav-item">
+            <button type="button" className={`nav-link${aba === 'seguranca' ? ' active' : ''}`} onClick={() => setAba('seguranca')}>
+              Segurança
+            </button>
+          </li>
         </ul>
       </div>
 
-      {aba === 'dados' && (
+      {aba === 'dados' && <DadosPessoais />}
+
+      {aba === 'seguranca' && (
         <div className="card-eventus">
-          <h2 className="h5">Dados pessoais</h2>
-          <dl className="row mb-0">
-            <dt className="col-sm-4">Nome</dt>
-            <dd className="col-sm-8">{user?.nome ?? SEM_DADO}</dd>
-            <dt className="col-sm-4">E-mail</dt>
-            <dd className="col-sm-8">{user?.email ?? SEM_DADO}</dd>
-            <dt className="col-sm-4">CPF</dt>
-            <dd className="col-sm-8">{SEM_DADO}</dd>
-            <dt className="col-sm-4">Data de nascimento</dt>
-            <dd className="col-sm-8">{SEM_DADO}</dd>
-            <dt className="col-sm-4">Endereço</dt>
-            <dd className="col-sm-8 mb-0">{SEM_DADO}</dd>
-          </dl>
+          <h2 className="h5">Segurança</h2>
+          <p className="text-muted mb-0">Em breve</p>
         </div>
       )}
 
