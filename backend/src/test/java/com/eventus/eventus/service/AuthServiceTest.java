@@ -143,7 +143,7 @@ class AuthServiceTest {
     }
 
     private static CadastroRequest cadastro(LocalDate nascimento) {
-        return new CadastroRequest("Maria", "Maria@Email.com", "123.456.789-01", nascimento, SENHA,
-                new EnderecoDto("01001-000", "Praça da Sé", "1", "Sé", "São Paulo", "sp"));
+        return new CadastroRequest("Maria", "Maria@Email.com", null, "123.456.789-01", nascimento, SENHA,
+                new EnderecoDto("01001-000", "Praça da Sé", "1", null, "Sé", "São Paulo", "sp"));
     }
 }
