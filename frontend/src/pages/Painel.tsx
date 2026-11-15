@@ -4,7 +4,8 @@ import { lerErro } from '../api/erros';
 import { Campo } from '../components/Campo';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Loading } from '../components/Loading';
-import { hojeISO } from '../utils/datas';
+import { useAuth } from '../auth/useAuth';
+import { formatarData, hojeISO } from '../utils/datas';
 
 interface Dependente {
   id: number;
@@ -12,12 +13,11 @@ interface Dependente {
   dataNascimento: string;
 }
 
-function formatarData(iso: string) {
-  const [ano, mes, dia] = iso.split('-');
-  return `${dia}/${mes}/${ano}`;
-}
+const SEM_DADO = 'Dados completos em breve';
 
 export function Painel() {
+  const { user } = useAuth();
+  const [aba, setAba] = useState<'dependentes' | 'dados'>('dependentes');
   const [dependentes, setDependentes] = useState<Dependente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +77,43 @@ export function Painel() {
 
   return (
     <>
-      <div className="page-header">
-        <h1 className="h3 page-title">Dependentes</h1>
-        <p className="text-muted mb-0">Cadastre quem vai com você aos eventos.</p>
+      <div className="page-header pb-0">
+        <h1 className="h3 page-title">Painel pessoal</h1>
+        <ul className="nav nav-tabs mt-3 border-bottom-0">
+          <li className="nav-item">
+            <button type="button" className={`nav-link${aba === 'dependentes' ? ' active' : ''}`} onClick={() => setAba('dependentes')}>
+              Dependentes
+            </button>
+          </li>
+          <li className="nav-item">
+            <button type="button" className={`nav-link${aba === 'dados' ? ' active' : ''}`} onClick={() => setAba('dados')}>
+              Dados pessoais
+            </button>
+          </li>
+        </ul>
       </div>
+
+      {aba === 'dados' && (
+        <div className="card-eventus">
+          <h2 className="h5">Dados pessoais</h2>
+          <dl className="row mb-0">
+            <dt className="col-sm-4">Nome</dt>
+            <dd className="col-sm-8">{user?.nome ?? SEM_DADO}</dd>
+            <dt className="col-sm-4">E-mail</dt>
+            <dd className="col-sm-8">{user?.email ?? SEM_DADO}</dd>
+            <dt className="col-sm-4">CPF</dt>
+            <dd className="col-sm-8">{SEM_DADO}</dd>
+            <dt className="col-sm-4">Data de nascimento</dt>
+            <dd className="col-sm-8">{SEM_DADO}</dd>
+            <dt className="col-sm-4">Endereço</dt>
+            <dd className="col-sm-8 mb-0">{SEM_DADO}</dd>
+          </dl>
+        </div>
+      )}
+
+      {aba === 'dependentes' && (
+      <>
+      <p className="text-muted">Cadastre quem vai com você aos eventos.</p>
 
       <div className="row g-4">
         <div className="col-md-7">
@@ -132,6 +165,8 @@ export function Painel() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </>
   );
 }
