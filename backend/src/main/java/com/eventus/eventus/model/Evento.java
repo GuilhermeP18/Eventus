@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,4 +44,13 @@ public class Evento {
 
     @Column(nullable = false)
     private LocalDateTime inscricaoFim;
+
+    /** Imagem de capa (opcional), guardada no banco. */
+    // "binary large object" é o nome padrão do BLOB; o H2 em MODE=PostgreSQL não aceita o nome "blob".
+    @Lob
+    @Column(columnDefinition = "binary large object")
+    private byte[] imagem;
+
+    /** Tipo da imagem, ex.: "image/png". */
+    private String imagemTipo;
 }
