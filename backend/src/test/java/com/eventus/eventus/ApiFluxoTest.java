@@ -6,14 +6,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,10 +90,61 @@ class ApiFluxoTest {
                 .andExpect(status().isUnauthorized());
         enviar("/api/v1/eventos", String.format(EVENTO, "2026-11-01T08:00:00"), token)
                 .andExpect(status().isBadRequest());
-        enviar("/api/v1/eventos", String.format(EVENTO, "2026-12-10T08:00:00"), token)
-                .andExpect(status().isCreated());
+        String criado = enviar("/api/v1/eventos", String.format(EVENTO, "2026-12-10T08:00:00"), token)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.imagemUrl").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        long eventoId = mapper.readTree(criado).get("id").asLong();
+
+        // edição: exige login, valida datas e altera o título sem perder a imagem
+        String urlEvento = "/api/v1/eventos/" + eventoId;
+        String edicao = String.format(EVENTO, "2026-12-10T08:00:00").replace("Feira", "Feira Editada");
+        put(urlEvento, edicao, null).andExpect(status().isUnauthorized());
+        put(urlEvento, String.format(EVENTO, "2026-11-01T08:00:00"), token).andExpect(status().isBadRequest());
+        put("/api/v1/eventos/999", edicao, token).andExpect(status().isNotFound());
+        put(urlEvento, edicao, token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Feira Editada"));
+        mvc.perform(get(urlEvento)).andExpect(jsonPath("$.titulo").value("Feira Editada"));
+
+        // imagem: exige login, recusa tipo inválido, aceita PNG e serve publicamente
+        String urlImagem = "/api/v1/eventos/" + eventoId + "/imagem";
+        mvc.perform(get(urlImagem)).andExpect(status().isNotFound());
+        mvc.perform(multipart(HttpMethod.PUT, urlImagem).file(arquivo("image/png")))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(multipart(HttpMethod.PUT, urlImagem).file(arquivo("image/gif"))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Formato de imagem não permitido. Use JPG, PNG ou WEBP."));
+        mvc.perform(multipart(HttpMethod.PUT, "/api/v1/eventos/999/imagem").file(arquivo("image/png"))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mvc.perform(multipart(HttpMethod.PUT, urlImagem).file(arquivo("image/png"))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imagemUrl").value(urlImagem));
+        mvc.perform(get(urlImagem))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/png"))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+        // editar os dados não apaga a imagem
+        put(urlEvento, edicao, token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imagemUrl").value(urlImagem));
         mvc.perform(get("/api/v1/eventos")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
         mvc.perform(get("/api/v1/eventos/999")).andExpect(status().isNotFound());
+    }
+
+    private ResultActions put(String url, String json, String token) throws Exception {
+        var req = MockMvcRequestBuilders.put(url).contentType(MediaType.APPLICATION_JSON).content(json);
+        if (token != null) {
+            req.header("Authorization", "Bearer " + token);
+        }
+        return mvc.perform(req);
+    }
+
+    private static MockMultipartFile arquivo(String tipo) {
+        return new MockMultipartFile("arquivo", "capa", tipo, new byte[]{1, 2, 3});
     }
 
     private String token(String email) throws Exception {
