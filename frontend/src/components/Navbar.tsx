@@ -25,7 +25,10 @@ export function Navbar() {
         <div className="d-flex align-items-center gap-2">
           {isAuthenticated ? (
             <>
-              {user?.nome && <span className="text-muted">{user.nome}</span>}
+              <Link className="btn btn-primary" to="/eventos/novo">
+                Criar evento
+              </Link>
+              {user?.nome &&<span className="text-muted">{user.nome}</span>}
               <button type="button" className="btn btn-outline-secondary" onClick={handleLogout}>
                 Sair
               </button>
