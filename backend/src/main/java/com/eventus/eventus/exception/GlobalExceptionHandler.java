@@ -8,6 +8,9 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -32,8 +35,13 @@ public class GlobalExceptionHandler {
         return resposta(HttpStatus.BAD_REQUEST, "Dados inválidos", campos);
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErroResponse> arquivoGrande(MaxUploadSizeExceededException ex) {
+        return resposta(HttpStatus.PAYLOAD_TOO_LARGE, "A imagem deve ter no máximo 2 MB.", null);
+    }
+
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-            ConstraintViolationException.class})
+            ConstraintViolationException.class, MissingServletRequestPartException.class, MultipartException.class})
     public ResponseEntity<ErroResponse> requisicaoInvalida(Exception ex) {
         return resposta(HttpStatus.BAD_REQUEST, "Requisição inválida", null);
     }
