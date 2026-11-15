@@ -5,6 +5,8 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Cadastro } from './pages/Cadastro';
+import { EventoDetalhe } from './pages/EventoDetalhe';
+import { NovoEvento } from './pages/NovoEvento';
 import { MeusIngressos } from './pages/MeusIngressos';
 import { Painel } from './pages/Painel';
 import { Portaria } from './pages/Portaria';
@@ -19,7 +21,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/eventos/:id" element={<EventoDetalhe />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/eventos/novo" element={<NovoEvento />} />
               <Route path="/meus-ingressos" element={<MeusIngressos />} />
               <Route path="/painel" element={<Painel />} />
               <Route path="/portaria" element={<Portaria />} />

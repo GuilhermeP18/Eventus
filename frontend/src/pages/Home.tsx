@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { http } from '../api/http';
 import { Loading } from '../components/Loading';
+import { ListaEventos } from '../components/ListaEventos';
 import { ErrorMessage } from '../components/ErrorMessage';
 
 interface ApiStatus {
@@ -55,6 +56,8 @@ export function Home() {
             {data.message}
           </div>
         )}
+
+        <ListaEventos />
       </div>
     </>
   );
