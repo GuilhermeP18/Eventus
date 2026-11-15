@@ -39,17 +39,23 @@ export function Home() {
 
   return (
     <>
-      <h1 className="h3">Eventus</h1>
-      <p className="text-muted">Sistema de gestão de eventos.</p>
-
-      {loading && <Loading />}
-      {error && <ErrorMessage message={`Não foi possível conectar à API: ${error}`} onRetry={retry} />}
-      {data && !loading && !error && (
-        <div className="alert alert-success" role="alert">
-          <span className="badge bg-success me-2">{data.status}</span>
-          {data.message}
+      <section className="hero">
+        <div className="container">
+          <h1>Eventus</h1>
+          <p>Sistema de gestão de eventos.</p>
         </div>
-      )}
+      </section>
+
+      <div className="container py-4">
+        {loading && <Loading />}
+        {error && <ErrorMessage message={`Não foi possível conectar à API: ${error}`} onRetry={retry} />}
+        {data && !loading && !error && (
+          <div className="alert alert-success" role="alert">
+            <span className="badge bg-success me-2">{data.status}</span>
+            {data.message}
+          </div>
+        )}
+      </div>
     </>
   );
 }
