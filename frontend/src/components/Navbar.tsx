@@ -1,18 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
+import { MenuUsuario } from './MenuUsuario';
 
 export function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
     <nav className="navbar eventus-navbar">
-      <div className="container h-100">
+      <div className="container h-100 flex-nowrap">
         <Link className="navbar-brand" to="/">
           <span className="brand-mark" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -20,18 +15,15 @@ export function Navbar() {
               <path d="M13 5v2M13 17v2M13 11v2" />
             </svg>
           </span>
-          Eventus
+          <span className="d-none d-sm-inline">Eventus</span>
         </Link>
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-2 flex-shrink-0">
           {isAuthenticated ? (
             <>
-              <Link className="btn btn-primary" to="/eventos/novo">
+              <Link className="btn btn-primary btn-criar-evento" to="/eventos/novo">
                 Criar evento
               </Link>
-              {user?.nome &&<span className="text-muted">{user.nome}</span>}
-              <button type="button" className="btn btn-outline-secondary" onClick={handleLogout}>
-                Sair
-              </button>
+              <MenuUsuario />
             </>
           ) : (
             <>
