@@ -14,6 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.LocalDateTime;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -133,6 +135,84 @@ class ApiFluxoTest {
                 .andExpect(jsonPath("$.imagemUrl").value(urlImagem));
         mvc.perform(get("/api/v1/eventos")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
         mvc.perform(get("/api/v1/eventos/999")).andExpect(status().isNotFound());
+
+        inscricoes(token, token("bia@email.com"));
+    }
+
+    /** Inscrições usam o relógio real, então o evento abre as inscrições ontem e fecha daqui a uma semana. */
+    private void inscricoes(String tokenAna, String tokenBia) throws Exception {
+        LocalDateTime agora = LocalDateTime.now();
+        String json = EVENTO.replace("2026-12-01T08:00:00", agora.minusDays(1).toString())
+                .replace("2027-01-20T09:00:00", agora.plusDays(30).toString())
+                .replace("\"capacidade\":50", "\"capacidade\":1");
+        String criado = enviar("/api/v1/eventos", String.format(json, agora.plusDays(7).toString()), tokenAna)
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long eventoId = mapper.readTree(criado).get("id").asLong();
+        String url = "/api/v1/eventos/" + eventoId + "/inscricoes";
+
+        // sem login -> 401; evento inexistente -> 404
+        enviar(url, "", null).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/inscricoes/minhas")).andExpect(status().isUnauthorized());
+        enviar("/api/v1/eventos/999/inscricoes", "", tokenAna)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Evento não encontrado"));
+
+        // com login -> 201 com código e dados básicos do evento
+        enviar(url, "", tokenAna)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.codigo").value(org.hamcrest.Matchers.matchesPattern("[A-Z0-9]{8}")))
+                .andExpect(jsonPath("$.presente").value(false))
+                .andExpect(jsonPath("$.evento.id").value(eventoId))
+                .andExpect(jsonPath("$.evento.titulo").value("Feira"));
+
+        // repetir -> 409; com a vaga ocupada, outra pessoa também -> 409
+        enviar(url, "", tokenAna).andExpect(status().isConflict());
+        enviar(url, "", tokenBia).andExpect(status().isConflict());
+
+        // cada um vê só as próprias inscrições
+        mvc.perform(get("/api/v1/inscricoes/minhas").header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].evento.id").value(eventoId));
+        mvc.perform(get("/api/v1/inscricoes/minhas").header("Authorization", "Bearer " + tokenBia))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        portaria(tokenAna, tokenBia);
+    }
+
+    private void portaria(String tokenAna, String tokenBia) throws Exception {
+        String minhas = mvc.perform(get("/api/v1/inscricoes/minhas").header("Authorization", "Bearer " + tokenAna))
+                .andReturn().getResponse().getContentAsString();
+        long inscricaoId = mapper.readTree(minhas).get(0).get("id").asLong();
+        String codigo = mapper.readTree(minhas).get(0).get("codigo").asText();
+        String checkin = "/api/v1/portaria/inscricoes/" + inscricaoId + "/checkin";
+
+        // busca: exige login, q vazio -> 400, encontra por código, CPF e nome
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/portaria/busca").param("q", " ").header("Authorization", "Bearer " + tokenBia))
+                .andExpect(status().isBadRequest());
+        for (String q : new String[]{codigo, codigo.toLowerCase(), "11111111111", "111.111.111-11"}) {
+            mvc.perform(get("/api/v1/portaria/busca").param("q", q).header("Authorization", "Bearer " + tokenBia))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(inscricaoId))
+                    .andExpect(jsonPath("$[0].nome").value("Ana"))
+                    .andExpect(jsonPath("$[0].presente").value(false))
+                    .andExpect(jsonPath("$[0].eventoTitulo").value("Feira"));
+        }
+
+        // check-in: 401 sem login, 404 inexistente, 200, depois 409
+        enviar(checkin, "", null).andExpect(status().isUnauthorized());
+        enviar("/api/v1/portaria/inscricoes/999999/checkin", "", tokenBia).andExpect(status().isNotFound());
+        enviar(checkin, "", tokenBia)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.presente").value(true));
+        enviar(checkin, "", tokenBia)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("Entrada já registrada"));
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo).header("Authorization", "Bearer " + tokenBia))
+                .andExpect(jsonPath("$[0].presente").value(true));
     }
 
     private ResultActions put(String url, String json, String token) throws Exception {

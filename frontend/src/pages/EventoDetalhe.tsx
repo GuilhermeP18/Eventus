@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { http } from '../api/http';
 import { lerErro } from '../api/erros';
+import { criarInscricao } from '../api/inscricoes';
 import { useAuth } from '../auth/useAuth';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Loading } from '../components/Loading';
@@ -16,6 +17,28 @@ export function EventoDetalhe() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const navigate = useNavigate();
+  const [inscrevendo, setInscrevendo] = useState(false);
+  const [codigo, setCodigo] = useState<string | null>(null);
+  const [erroInscricao, setErroInscricao] = useState<string | null>(null);
+
+  const inscrever = async () => {
+    if (!evento) return;
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setInscrevendo(true);
+    setErroInscricao(null);
+    try {
+      const inscricao = await criarInscricao(evento.id);
+      setCodigo(inscricao.codigo);
+    } catch (err) {
+      setErroInscricao(lerErro(err).mensagem ?? 'Não foi possível realizar a inscrição.');
+    } finally {
+      setInscrevendo(false);
+    }
+  };
 
   const retry = () => {
     setLoading(true);
@@ -76,6 +99,18 @@ export function EventoDetalhe() {
                 {formatarDataHora(evento.inscricaoInicio)} até {formatarDataHora(evento.inscricaoFim)}
               </dd>
             </dl>
+            {codigo && (
+              <div className="alert alert-success mt-3 mb-0" role="status">
+                Inscrição realizada! Seu código: <strong className="font-monospace">{codigo}</strong>.{' '}
+                <Link to="/meus-ingressos">Ver meus ingressos</Link>
+              </div>
+            )}
+            {erroInscricao && <ErrorMessage message={erroInscricao} />}
+            {!codigo && (
+              <button type="button" className="btn btn-primary mt-3" onClick={inscrever} disabled={inscrevendo}>
+                {inscrevendo ? 'Inscrevendo...' : 'Inscrever-se'}
+              </button>
+            )}
           </div>
         )}
       </div>
