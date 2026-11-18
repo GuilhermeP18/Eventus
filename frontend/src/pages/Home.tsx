@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { http } from '../api/http';
-import { Loading } from '../components/Loading';
 import { ListaEventos } from '../components/ListaEventos';
-import { ErrorMessage } from '../components/ErrorMessage';
+import { IndicadorApi } from '../components/IndicadorApi';
 
 interface ApiStatus {
   status: string;
@@ -11,7 +10,6 @@ interface ApiStatus {
 }
 
 export function Home() {
-  const [data, setData] = useState<ApiStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +25,7 @@ export function Home() {
     const controller = new AbortController();
     http
       .get<ApiStatus>('/test', { signal: controller.signal })
-      .then((response) => setData(response.data))
+      .then(() => undefined)
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
         setError(axios.isAxiosError(err) ? err.message : 'Erro desconhecido');
@@ -48,16 +46,22 @@ export function Home() {
       </section>
 
       <div className="container py-4">
-        {loading && <Loading />}
-        {error && <ErrorMessage message={`Não foi possível conectar à API: ${error}`} onRetry={retry} />}
-        {data && !loading && !error && (
-          <div className="alert alert-success" role="alert">
-            <span className="badge bg-success me-2">{data.status}</span>
-            {data.message}
+        {error && (
+          <div className="alert alert-warning d-flex align-items-center justify-content-between gap-3" role="alert">
+            <span>Não foi possível conectar à API</span>
+            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={retry}>
+              Tentar novamente
+            </button>
           </div>
         )}
 
         <ListaEventos />
+
+        {!error && (
+          <div className="mt-4">
+            <IndicadorApi verificando={loading} />
+          </div>
+        )}
       </div>
     </>
   );
