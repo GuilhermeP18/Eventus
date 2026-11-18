@@ -178,6 +178,41 @@ class ApiFluxoTest {
         mvc.perform(get("/api/v1/inscricoes/minhas").header("Authorization", "Bearer " + tokenBia))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+
+        portaria(tokenAna, tokenBia);
+    }
+
+    private void portaria(String tokenAna, String tokenBia) throws Exception {
+        String minhas = mvc.perform(get("/api/v1/inscricoes/minhas").header("Authorization", "Bearer " + tokenAna))
+                .andReturn().getResponse().getContentAsString();
+        long inscricaoId = mapper.readTree(minhas).get(0).get("id").asLong();
+        String codigo = mapper.readTree(minhas).get(0).get("codigo").asText();
+        String checkin = "/api/v1/portaria/inscricoes/" + inscricaoId + "/checkin";
+
+        // busca: exige login, q vazio -> 400, encontra por código, CPF e nome
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/portaria/busca").param("q", " ").header("Authorization", "Bearer " + tokenBia))
+                .andExpect(status().isBadRequest());
+        for (String q : new String[]{codigo, codigo.toLowerCase(), "11111111111", "111.111.111-11"}) {
+            mvc.perform(get("/api/v1/portaria/busca").param("q", q).header("Authorization", "Bearer " + tokenBia))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(inscricaoId))
+                    .andExpect(jsonPath("$[0].nome").value("Ana"))
+                    .andExpect(jsonPath("$[0].presente").value(false))
+                    .andExpect(jsonPath("$[0].eventoTitulo").value("Feira"));
+        }
+
+        // check-in: 401 sem login, 404 inexistente, 200, depois 409
+        enviar(checkin, "", null).andExpect(status().isUnauthorized());
+        enviar("/api/v1/portaria/inscricoes/999999/checkin", "", tokenBia).andExpect(status().isNotFound());
+        enviar(checkin, "", tokenBia)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.presente").value(true));
+        enviar(checkin, "", tokenBia)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("Entrada já registrada"));
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo).header("Authorization", "Bearer " + tokenBia))
+                .andExpect(jsonPath("$[0].presente").value(true));
     }
 
     private ResultActions put(String url, String json, String token) throws Exception {
