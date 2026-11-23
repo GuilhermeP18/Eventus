@@ -1,0 +1,42 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import { MenuUsuario } from './MenuUsuario';
+
+export function Navbar() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <nav className="navbar eventus-navbar">
+      <div className="container h-100 flex-nowrap">
+        <Link className="navbar-brand" to="/">
+          <span className="brand-mark" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+              <path d="M13 5v2M13 17v2M13 11v2" />
+            </svg>
+          </span>
+          <span className="d-none d-sm-inline">Eventus</span>
+        </Link>
+        <div className="d-flex align-items-center gap-2 flex-shrink-0">
+          {isAuthenticated ? (
+            <>
+              <Link className="btn btn-primary btn-criar-evento" to="/eventos/novo">
+                Criar evento
+              </Link>
+              <MenuUsuario />
+            </>
+          ) : (
+            <>
+              <Link className="btn btn-outline-primary" to="/login">
+                Entrar
+              </Link>
+              <Link className="btn btn-primary" to="/cadastro">
+                Cadastrar
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
