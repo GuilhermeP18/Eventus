@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { http } from '../api/http';
 import { lerErro } from '../api/erros';
-import { criarInscricao } from '../api/inscricoes';
+import { criarInscricao, listarMinhasInscricoes } from '../api/inscricoes';
 import { useAuth } from '../auth/useAuth';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Loading } from '../components/Loading';
 import type { Evento } from '../types/evento';
+import type { Inscricao } from '../types/inscricao';
 import { formatarDataHora } from '../utils/datas';
+import { podeEditarEvento } from '../utils/eventos';
 
 export function EventoDetalhe() {
   const { id } = useParams();
@@ -21,6 +23,9 @@ export function EventoDetalhe() {
   const [inscrevendo, setInscrevendo] = useState(false);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [erroInscricao, setErroInscricao] = useState<string | null>(null);
+  const [minhasInscricoes, setMinhasInscricoes] = useState<Inscricao[]>([]);
+  const jaInscrito =
+    isAuthenticated && evento !== null && minhasInscricoes.some((i) => i.evento.id === evento.id);
 
   const inscrever = async () => {
     if (!evento) return;
@@ -62,6 +67,18 @@ export function EventoDetalhe() {
     return () => controller.abort();
   }, [id, attempt]);
 
+  // Se o usuário está logado, busca os ingressos dele para saber se já está inscrito neste evento.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const controller = new AbortController();
+    listarMinhasInscricoes(controller.signal)
+      .then(setMinhasInscricoes)
+      .catch(() => {
+        // sem a lista, o botão Inscrever-se continua; a API recusa duplicidade com 409
+      });
+    return () => controller.abort();
+  }, [isAuthenticated]);
+
   return (
     <div className="row justify-content-center">
       <div className="col-lg-8">
@@ -69,7 +86,7 @@ export function EventoDetalhe() {
           <Link to="/" className="btn-voltar">
             &larr; Voltar
           </Link>
-          {isAuthenticated && evento && user?.id === evento.criadorId && !loading && !error && (
+          {isAuthenticated && evento && podeEditarEvento(user, evento) && !loading && !error && (
             <Link to={`/eventos/${evento.id}/editar`} className="btn btn-outline-secondary btn-sm">
               Editar
             </Link>
@@ -106,7 +123,12 @@ export function EventoDetalhe() {
               </div>
             )}
             {erroInscricao && <ErrorMessage message={erroInscricao} />}
-            {!codigo && (
+            {!codigo && jaInscrito && (
+              <Link to="/meus-ingressos" className="btn btn-outline-primary mt-3">
+                Ver ingresso
+              </Link>
+            )}
+            {!codigo && !jaInscrito && (
               <button type="button" className="btn btn-primary mt-3" onClick={inscrever} disabled={inscrevendo}>
                 {inscrevendo ? 'Inscrevendo...' : 'Inscrever-se'}
               </button>
