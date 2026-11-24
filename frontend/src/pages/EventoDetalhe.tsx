@@ -11,7 +11,7 @@ import { formatarDataHora } from '../utils/datas';
 
 export function EventoDetalhe() {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const aviso = (useLocation().state as { aviso?: string } | null)?.aviso;
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ export function EventoDetalhe() {
           <Link to="/" className="btn-voltar">
             &larr; Voltar
           </Link>
-          {isAuthenticated && evento && !loading && !error && (
+          {isAuthenticated && evento && user?.id === evento.criadorId && !loading && !error && (
             <Link to={`/eventos/${evento.id}/editar`} className="btn btn-outline-secondary btn-sm">
               Editar
             </Link>

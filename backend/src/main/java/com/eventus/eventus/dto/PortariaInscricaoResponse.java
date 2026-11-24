@@ -10,7 +10,13 @@ public record PortariaInscricaoResponse(Long id, String codigo, boolean presente
 
     public static PortariaInscricaoResponse de(Inscricao i) {
         return new PortariaInscricaoResponse(i.getId(), i.getCodigo(), i.isPresente(),
-                i.getUsuario().getNome(), i.getUsuario().getCpf(),
+                i.getUsuario().getNome(), mascararCpf(i.getUsuario().getCpf()),
                 i.getEvento().getTitulo(), i.getEvento().getData());
+    }
+
+    private static String mascararCpf(String cpf) {
+        return cpf != null && cpf.matches("\\d{11}")
+                ? "***.***.***-" + cpf.substring(9)
+                : "***";
     }
 }

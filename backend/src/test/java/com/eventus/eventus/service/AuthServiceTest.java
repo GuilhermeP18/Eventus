@@ -8,6 +8,7 @@ import com.eventus.eventus.exception.ApiException;
 import com.eventus.eventus.model.Usuario;
 import com.eventus.eventus.repository.UsuarioRepository;
 import com.eventus.eventus.security.JwtService;
+import com.eventus.eventus.security.PortariaOperadores;
 import com.eventus.eventus.security.TentativasLoginService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,8 @@ class AuthServiceTest {
     void setUp() {
         usuarios = mock(UsuarioRepository.class);
         JwtService jwt = new JwtService("segredo-de-teste-com-mais-de-32-caracteres!!", 60, relogio);
-        service = new AuthService(usuarios, encoder, jwt, new TentativasLoginService(relogio), relogio);
+        service = new AuthService(usuarios, encoder, jwt, new TentativasLoginService(relogio),
+                new PortariaOperadores(""), relogio);
     }
 
     // ---------- idade mínima ----------

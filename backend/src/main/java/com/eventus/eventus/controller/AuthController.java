@@ -1,6 +1,7 @@
 package com.eventus.eventus.controller;
 
 import com.eventus.eventus.dto.AtualizarPerfilRequest;
+import com.eventus.eventus.dto.AlterarSenhaRequest;
 import com.eventus.eventus.dto.CadastroRequest;
 import com.eventus.eventus.dto.LoginRequest;
 import com.eventus.eventus.dto.TokenResponse;
@@ -50,10 +51,12 @@ public class AuthController {
         return authService.atualizarPerfil(emailLogado(auth), req);
     }
 
-    /**
-     * "/auth/**" é público na SecurityConfig, então a regra de login de /me é conferida aqui.
-     * (Quando a SecurityConfig for revisada, /me deve passar a exigir login por lá.)
-     */
+    @PutMapping("/me/senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void alterarSenha(Authentication auth, @Valid @RequestBody AlterarSenhaRequest req) {
+        authService.alterarSenha(emailLogado(auth), req);
+    }
+
     private static String emailLogado(Authentication auth) {
         if (auth == null || auth instanceof AnonymousAuthenticationToken || !auth.isAuthenticated()) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Autenticação necessária");

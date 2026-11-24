@@ -59,7 +59,7 @@ class PortariaServiceTest {
         assertEquals(1, r.size());
         assertEquals("AB12CD34", r.get(0).codigo());
         assertEquals("Ana Souza", r.get(0).nome());
-        assertEquals("11122233344", r.get(0).cpf());
+        assertEquals("***.***.***-44", r.get(0).cpf());
         assertEquals("Feira de Ciências", r.get(0).eventoTitulo());
         assertEquals(LocalDateTime.of(2027, 1, 20, 9, 0), r.get(0).eventoData());
         assertFalse(r.get(0).presente());

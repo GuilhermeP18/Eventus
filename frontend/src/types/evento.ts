@@ -9,6 +9,7 @@ export interface Evento {
   inscricaoInicio: string;
   inscricaoFim: string;
   imagemUrl: string | null;
+  criadorId: number | null;
 }
 
 /** Mesmos campos de EventoRequest no backend (a imagem é enviada à parte). */

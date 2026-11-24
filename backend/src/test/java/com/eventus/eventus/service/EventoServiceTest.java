@@ -3,7 +3,9 @@ package com.eventus.eventus.service;
 import com.eventus.eventus.dto.EventoRequest;
 import com.eventus.eventus.exception.ApiException;
 import com.eventus.eventus.model.Evento;
+import com.eventus.eventus.model.Usuario;
 import com.eventus.eventus.repository.EventoRepository;
+import com.eventus.eventus.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -26,18 +28,21 @@ class EventoServiceTest {
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 12, 1, 8, 0);
 
     private EventoRepository eventos;
+    private UsuarioRepository usuarios;
     private EventoService service;
 
     @BeforeEach
     void setUp() {
         eventos = mock(EventoRepository.class);
-        service = new EventoService(eventos);
+        usuarios = mock(UsuarioRepository.class);
+        when(usuarios.findByEmail("criador@email.com")).thenReturn(Optional.of(usuario("criador@email.com")));
+        service = new EventoService(eventos, usuarios);
     }
 
     @Test
     void recusaFimDeInscricaoAntesDoInicio() {
         ApiException ex = assertThrows(ApiException.class,
-                () -> service.criar(evento(INICIO, INICIO.minusDays(1))));
+                () -> service.criar("criador@email.com", evento(INICIO, INICIO.minusDays(1))));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(eventos, never()).save(any());
@@ -45,7 +50,7 @@ class EventoServiceTest {
 
     @Test
     void recusaFimDeInscricaoIgualAoInicio() {
-        assertThrows(ApiException.class, () -> service.criar(evento(INICIO, INICIO)));
+        assertThrows(ApiException.class, () -> service.criar("criador@email.com", evento(INICIO, INICIO)));
         verify(eventos, never()).save(any());
     }
 
@@ -53,7 +58,7 @@ class EventoServiceTest {
     void criaEventoComDatasValidas() {
         when(eventos.save(any(Evento.class))).thenAnswer(i -> i.getArgument(0));
 
-        var resposta = service.criar(evento(INICIO, INICIO.plusDays(10)));
+        var resposta = service.criar("criador@email.com", evento(INICIO, INICIO.plusDays(10)));
 
         assertEquals("Feira de Ciências", resposta.titulo());
     }
@@ -63,7 +68,8 @@ class EventoServiceTest {
         eventoExistente();
         var gif = new MockMultipartFile("arquivo", "capa.gif", "image/gif", new byte[]{1, 2, 3});
 
-        ApiException ex = assertThrows(ApiException.class, () -> service.salvarImagem(1L, gif));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> service.salvarImagem(1L, "criador@email.com", gif));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         assertEquals("Formato de imagem não permitido. Use JPG, PNG ou WEBP.", ex.getMessage());
@@ -76,7 +82,7 @@ class EventoServiceTest {
         when(eventos.save(any(Evento.class))).thenAnswer(i -> i.getArgument(0));
         var png = new MockMultipartFile("arquivo", "capa.png", "image/png", new byte[]{1, 2, 3});
 
-        var resposta = service.salvarImagem(1L, png);
+        var resposta = service.salvarImagem(1L, "criador@email.com", png);
 
         assertEquals("/api/v1/eventos/1/imagem", resposta.imagemUrl());
         assertEquals("image/png", service.buscarImagem(1L).tipo());
@@ -95,7 +101,8 @@ class EventoServiceTest {
         when(eventos.findById(99L)).thenReturn(Optional.empty());
         var png = new MockMultipartFile("arquivo", "capa.png", "image/png", new byte[]{1});
 
-        ApiException ex = assertThrows(ApiException.class, () -> service.salvarImagem(99L, png));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> service.salvarImagem(99L, "criador@email.com", png));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
     }
@@ -107,7 +114,7 @@ class EventoServiceTest {
         var novo = new EventoRequest("Novo título", "Outra descrição", LocalDateTime.of(2027, 3, 1, 10, 0),
                 "Auditório", 200, INICIO.plusDays(1), INICIO.plusDays(20));
 
-        var resposta = service.atualizar(1L, novo);
+        var resposta = service.atualizar(1L, "criador@email.com", novo);
 
         assertEquals("Novo título", resposta.titulo());
         assertEquals(LocalDateTime.of(2027, 3, 1, 10, 0), resposta.data());
@@ -119,7 +126,7 @@ class EventoServiceTest {
         eventoExistente();
 
         ApiException ex = assertThrows(ApiException.class,
-                () -> service.atualizar(1L, evento(INICIO, INICIO.minusDays(1))));
+                () -> service.atualizar(1L, "criador@email.com", evento(INICIO, INICIO.minusDays(1))));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(eventos, never()).save(any());
@@ -132,7 +139,7 @@ class EventoServiceTest {
         existente.setImagemTipo("image/png");
         when(eventos.save(any(Evento.class))).thenAnswer(i -> i.getArgument(0));
 
-        var resposta = service.atualizar(1L, evento(INICIO, INICIO.plusDays(10)));
+        var resposta = service.atualizar(1L, "criador@email.com", evento(INICIO, INICIO.plusDays(10)));
 
         assertEquals("/api/v1/eventos/1/imagem", resposta.imagemUrl());
         assertEquals("image/png", service.buscarImagem(1L).tipo());
@@ -144,17 +151,49 @@ class EventoServiceTest {
         when(eventos.findById(99L)).thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(ApiException.class,
-                () -> service.atualizar(99L, evento(INICIO, INICIO.plusDays(10))));
+                () -> service.atualizar(99L, "criador@email.com", evento(INICIO, INICIO.plusDays(10))));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+
+    @Test
+    void outroUsuarioNaoPodeAtualizarEvento() {
+        eventoExistente();
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> service.atualizar(1L, "outro@email.com", evento(INICIO, INICIO.plusDays(10))));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(eventos, never()).save(any());
+    }
+
+    @Test
+    void eventoSemCriadorNaoPodeSerAtualizado() {
+        Evento semCriador = new Evento();
+        semCriador.setId(1L);
+        when(eventos.findById(1L)).thenReturn(Optional.of(semCriador));
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> service.atualizar(1L, "criador@email.com", evento(INICIO, INICIO.plusDays(10))));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(eventos, never()).save(any());
     }
 
     /** Evento 1 sem imagem; save e findById passam a devolver o mesmo objeto. */
     private Evento eventoExistente() {
         Evento evento = new Evento();
         evento.setId(1L);
+        evento.setCriador(usuario("criador@email.com"));
         when(eventos.findById(1L)).thenReturn(Optional.of(evento));
         return evento;
+    }
+
+    private static Usuario usuario(String email) {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail(email);
+        return usuario;
     }
 
     private static EventoRequest evento(LocalDateTime inscricaoInicio, LocalDateTime inscricaoFim) {
