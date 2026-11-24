@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -57,12 +58,18 @@ class RegressaoApiTest {
     @Autowired
     UsuarioRepository usuarios;
 
+    @Autowired
+    JdbcTemplate jdbc;
+
     @BeforeEach
     void limparBanco() {
         inscricoes.deleteAll();
         dependentes.deleteAll();
         eventos.deleteAll();
         usuarios.deleteAll();
+        // application-test.properties define o usuário de ID 1 como operador da portaria;
+        // reiniciar a identidade garante que o primeiro usuário cadastrado em cada teste seja o operador.
+        jdbc.execute("ALTER TABLE usuarios ALTER COLUMN id RESTART WITH 1");
     }
 
     @Test
