@@ -3,7 +3,7 @@ import { useAuth } from '../auth/useAuth';
 import { MenuUsuario } from './MenuUsuario';
 
 export function Navbar() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <nav className="navbar eventus-navbar">
@@ -23,6 +23,11 @@ export function Navbar() {
               <Link className="btn btn-primary btn-criar-evento" to="/eventos/novo">
                 Criar evento
               </Link>
+              {user?.operador && (
+                <Link className="btn btn-outline-primary" to="/portaria">
+                  Portaria
+                </Link>
+              )}
               <MenuUsuario />
             </>
           ) : (

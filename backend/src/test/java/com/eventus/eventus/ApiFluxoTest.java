@@ -48,6 +48,9 @@ class ApiFluxoTest {
 
     @Test
     void fluxoCompleto() throws Exception {
+        mvc.perform(get("/api/v1/auth/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/v3/api-docs")).andExpect(status().isNotFound());
+
         // cadastro não devolve a senha
         enviar("/api/v1/auth/cadastro", String.format(CADASTRO, "ana@email.com", "11111111111"), null)
                 .andExpect(status().isCreated())
@@ -71,6 +74,10 @@ class ApiFluxoTest {
                 .andExpect(jsonPath("$.mensagem").value("E-mail ou senha incorretos"));
 
         String token = token("ana@email.com");
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("ana@email.com"))
+                .andExpect(jsonPath("$.operador").value(true));
 
         // rotas protegidas sem token -> 401; com token -> ok
         mvc.perform(get("/api/v1/dependentes")).andExpect(status().isUnauthorized());
@@ -86,6 +93,9 @@ class ApiFluxoTest {
         mvc.perform(get("/api/v1/dependentes").header("Authorization", "Bearer " + token("bia@email.com")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token("bia@email.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operador").value(false));
 
         // eventos: criar exige login, datas inválidas -> 400, leitura é pública
         enviar("/api/v1/eventos", String.format(EVENTO, "2026-12-10T08:00:00"), null)
@@ -95,6 +105,7 @@ class ApiFluxoTest {
         String criado = enviar("/api/v1/eventos", String.format(EVENTO, "2026-12-10T08:00:00"), token)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.imagemUrl").doesNotExist())
+                .andExpect(jsonPath("$.criadorId").exists())
                 .andReturn().getResponse().getContentAsString();
         long eventoId = mapper.readTree(criado).get("id").asLong();
 
@@ -104,6 +115,7 @@ class ApiFluxoTest {
         put(urlEvento, edicao, null).andExpect(status().isUnauthorized());
         put(urlEvento, String.format(EVENTO, "2026-11-01T08:00:00"), token).andExpect(status().isBadRequest());
         put("/api/v1/eventos/999", edicao, token).andExpect(status().isNotFound());
+        put(urlEvento, edicao, token("bia@email.com")).andExpect(status().isForbidden());
         put(urlEvento, edicao, token)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.titulo").value("Feira Editada"));
@@ -118,6 +130,9 @@ class ApiFluxoTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("Formato de imagem não permitido. Use JPG, PNG ou WEBP."));
+        mvc.perform(multipart(HttpMethod.PUT, urlImagem).file(arquivo("image/png"))
+                        .header("Authorization", "Bearer " + token("bia@email.com")))
+                .andExpect(status().isForbidden());
         mvc.perform(multipart(HttpMethod.PUT, "/api/v1/eventos/999/imagem").file(arquivo("image/png"))
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
@@ -136,7 +151,24 @@ class ApiFluxoTest {
         mvc.perform(get("/api/v1/eventos")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
         mvc.perform(get("/api/v1/eventos/999")).andExpect(status().isNotFound());
 
-        inscricoes(token, token("bia@email.com"));
+        String tokenBia = token("bia@email.com");
+        inscricoes(token, tokenBia);
+
+        put("/api/v1/auth/me/senha",
+                "{\"senhaAtual\":\"senha12345\",\"novaSenha\":\"novaSenha12345\",\"confirmarSenha\":\"diferente\"}",
+                token).andExpect(status().isBadRequest());
+        put("/api/v1/auth/me/senha",
+                "{\"senhaAtual\":\"senha-errada\",\"novaSenha\":\"novaSenha12345\",\"confirmarSenha\":\"novaSenha12345\"}",
+                token).andExpect(status().isBadRequest());
+        put("/api/v1/auth/me/senha",
+                "{\"senhaAtual\":\"senha12345\",\"novaSenha\":\"novaSenha12345\",\"confirmarSenha\":\"novaSenha12345\"}",
+                null).andExpect(status().isUnauthorized());
+        put("/api/v1/auth/me/senha",
+                "{\"senhaAtual\":\"senha12345\",\"novaSenha\":\"novaSenha12345\",\"confirmarSenha\":\"novaSenha12345\"}",
+                token).andExpect(status().isNoContent());
+        enviar("/api/v1/auth/login", "{\"email\":\"ana@email.com\",\"senha\":\"senha12345\"}", null)
+                .andExpect(status().isUnauthorized());
+        tokenComSenha("ana@email.com", "novaSenha12345");
     }
 
     /** Inscrições usam o relógio real, então o evento abre as inscrições ontem e fecha daqui a uma semana. */
@@ -189,29 +221,33 @@ class ApiFluxoTest {
         String codigo = mapper.readTree(minhas).get(0).get("codigo").asText();
         String checkin = "/api/v1/portaria/inscricoes/" + inscricaoId + "/checkin";
 
-        // busca: exige login, q vazio -> 400, encontra por código, CPF e nome
+        // busca e check-in exigem perfil de operador
         mvc.perform(get("/api/v1/portaria/busca").param("q", codigo)).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/v1/portaria/busca").param("q", " ").header("Authorization", "Bearer " + tokenBia))
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo).header("Authorization", "Bearer " + tokenBia))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/portaria/busca").param("q", " ").header("Authorization", "Bearer " + tokenAna))
                 .andExpect(status().isBadRequest());
         for (String q : new String[]{codigo, codigo.toLowerCase(), "11111111111", "111.111.111-11"}) {
-            mvc.perform(get("/api/v1/portaria/busca").param("q", q).header("Authorization", "Bearer " + tokenBia))
+            mvc.perform(get("/api/v1/portaria/busca").param("q", q).header("Authorization", "Bearer " + tokenAna))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(inscricaoId))
                     .andExpect(jsonPath("$[0].nome").value("Ana"))
+                    .andExpect(jsonPath("$[0].cpf").value("***.***.***-11"))
                     .andExpect(jsonPath("$[0].presente").value(false))
                     .andExpect(jsonPath("$[0].eventoTitulo").value("Feira"));
         }
 
-        // check-in: 401 sem login, 404 inexistente, 200, depois 409
+        // check-in: 401 sem login, 403 para usuário comum, 404 inexistente e sucesso para operador
         enviar(checkin, "", null).andExpect(status().isUnauthorized());
-        enviar("/api/v1/portaria/inscricoes/999999/checkin", "", tokenBia).andExpect(status().isNotFound());
-        enviar(checkin, "", tokenBia)
+        enviar(checkin, "", tokenBia).andExpect(status().isForbidden());
+        enviar("/api/v1/portaria/inscricoes/999999/checkin", "", tokenAna).andExpect(status().isNotFound());
+        enviar(checkin, "", tokenAna)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.presente").value(true));
-        enviar(checkin, "", tokenBia)
+        enviar(checkin, "", tokenAna)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.mensagem").value("Entrada já registrada"));
-        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo).header("Authorization", "Bearer " + tokenBia))
+        mvc.perform(get("/api/v1/portaria/busca").param("q", codigo).header("Authorization", "Bearer " + tokenAna))
                 .andExpect(jsonPath("$[0].presente").value(true));
     }
 
@@ -228,8 +264,12 @@ class ApiFluxoTest {
     }
 
     private String token(String email) throws Exception {
+        return tokenComSenha(email, "senha12345");
+    }
+
+    private String tokenComSenha(String email, String senha) throws Exception {
         String corpo = enviar("/api/v1/auth/login",
-                "{\"email\":\"" + email + "\",\"senha\":\"senha12345\"}", null)
+                "{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}", null)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         JsonNode json = mapper.readTree(corpo);

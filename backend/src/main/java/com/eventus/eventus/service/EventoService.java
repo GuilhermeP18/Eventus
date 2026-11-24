@@ -4,7 +4,9 @@ import com.eventus.eventus.dto.EventoRequest;
 import com.eventus.eventus.dto.EventoResponse;
 import com.eventus.eventus.exception.ApiException;
 import com.eventus.eventus.model.Evento;
+import com.eventus.eventus.model.Usuario;
 import com.eventus.eventus.repository.EventoRepository;
+import com.eventus.eventus.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,21 +24,25 @@ public class EventoService {
     private static final Set<String> TIPOS_IMAGEM = Set.of("image/jpeg", "image/png", "image/webp");
 
     private final EventoRepository eventos;
+    private final UsuarioRepository usuarios;
 
-    public EventoService(EventoRepository eventos) {
+    public EventoService(EventoRepository eventos, UsuarioRepository usuarios) {
         this.eventos = eventos;
+        this.usuarios = usuarios;
     }
 
-    public EventoResponse criar(EventoRequest req) {
+    public EventoResponse criar(String emailCriador, EventoRequest req) {
         validarDatas(req);
         Evento evento = new Evento();
+        evento.setCriador(buscarUsuario(emailCriador));
         preencher(evento, req);
         return EventoResponse.de(eventos.save(evento));
     }
 
     /** Atualiza os dados do evento. A imagem não muda aqui: só por {@link #salvarImagem}. */
-    public EventoResponse atualizar(Long id, EventoRequest req) {
+    public EventoResponse atualizar(Long id, String emailSolicitante, EventoRequest req) {
         Evento evento = buscarEvento(id);
+        validarCriador(evento, emailSolicitante);
         validarDatas(req);
         preencher(evento, req);
         return EventoResponse.de(eventos.save(evento));
@@ -50,8 +56,9 @@ public class EventoService {
         return EventoResponse.de(buscarEvento(id));
     }
 
-    public EventoResponse salvarImagem(Long id, MultipartFile arquivo) throws IOException {
+    public EventoResponse salvarImagem(Long id, String emailSolicitante, MultipartFile arquivo) throws IOException {
         Evento evento = buscarEvento(id);
+        validarCriador(evento, emailSolicitante);
         if (arquivo.isEmpty() || !TIPOS_IMAGEM.contains(arquivo.getContentType())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Formato de imagem não permitido. Use JPG, PNG ou WEBP.");
         }
@@ -88,5 +95,16 @@ public class EventoService {
     private Evento buscarEvento(Long id) {
         return eventos.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
+    }
+
+    private Usuario buscarUsuario(String email) {
+        return usuarios.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Usuário do token não existe mais"));
+    }
+
+    private static void validarCriador(Evento evento, String emailSolicitante) {
+        if (evento.getCriador() == null || !evento.getCriador().getEmail().equals(emailSolicitante)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Somente o criador pode editar este evento");
+        }
     }
 }

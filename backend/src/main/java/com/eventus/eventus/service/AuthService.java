@@ -1,6 +1,7 @@
 package com.eventus.eventus.service;
 
 import com.eventus.eventus.dto.AtualizarPerfilRequest;
+import com.eventus.eventus.dto.AlterarSenhaRequest;
 import com.eventus.eventus.dto.CadastroRequest;
 import com.eventus.eventus.dto.LoginRequest;
 import com.eventus.eventus.dto.TokenResponse;
@@ -9,6 +10,7 @@ import com.eventus.eventus.exception.ApiException;
 import com.eventus.eventus.model.Usuario;
 import com.eventus.eventus.repository.UsuarioRepository;
 import com.eventus.eventus.security.JwtService;
+import com.eventus.eventus.security.PortariaOperadores;
 import com.eventus.eventus.security.TentativasLoginService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,14 +29,16 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     private final TentativasLoginService tentativas;
+    private final PortariaOperadores operadores;
     private final Clock clock;
 
     public AuthService(UsuarioRepository usuarios, PasswordEncoder encoder, JwtService jwt,
-                       TentativasLoginService tentativas, Clock clock) {
+                       TentativasLoginService tentativas, PortariaOperadores operadores, Clock clock) {
         this.usuarios = usuarios;
         this.encoder = encoder;
         this.jwt = jwt;
         this.tentativas = tentativas;
+        this.operadores = operadores;
         this.clock = clock;
     }
 
@@ -55,11 +59,11 @@ public class AuthService {
         usuario.setDataNascimento(req.dataNascimento());
         usuario.setSenha(encoder.encode(req.senha()));
         usuario.setEndereco(req.endereco().paraEntidade());
-        return UsuarioResponse.de(usuarios.save(usuario));
+        return resposta(usuarios.save(usuario));
     }
 
     public UsuarioResponse perfil(String email) {
-        return UsuarioResponse.de(buscarUsuario(email));
+        return resposta(buscarUsuario(email));
     }
 
     /** Atualiza só os dados pessoais. E-mail, CPF e senha não mudam por aqui. */
@@ -70,7 +74,22 @@ public class AuthService {
         usuario.setTelefone(req.telefone());
         usuario.setDataNascimento(req.dataNascimento());
         usuario.setEndereco(req.endereco().paraEntidade());
-        return UsuarioResponse.de(usuarios.save(usuario));
+        return resposta(usuarios.save(usuario));
+    }
+
+    public void alterarSenha(String email, AlterarSenhaRequest req) {
+        Usuario usuario = buscarUsuario(email);
+        if (!encoder.matches(req.senhaAtual(), usuario.getSenha())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
+        }
+        if (!req.novaSenha().equals(req.confirmarSenha())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A confirmação da nova senha não confere");
+        }
+        if (encoder.matches(req.novaSenha(), usuario.getSenha())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A nova senha deve ser diferente da senha atual");
+        }
+        usuario.setSenha(encoder.encode(req.novaSenha()));
+        usuarios.save(usuario);
     }
 
     public TokenResponse login(LoginRequest req) {
@@ -84,7 +103,7 @@ public class AuthService {
         }
 
         tentativas.registrarSucesso(email);
-        return TokenResponse.bearer(jwt.gerar(usuario.getEmail()));
+        return TokenResponse.bearer(jwt.gerar(usuario.getEmail(), usuario.getId()));
     }
 
     private void validarIdade(LocalDate nascimento) {
@@ -96,6 +115,10 @@ public class AuthService {
     private Usuario buscarUsuario(String email) {
         return usuarios.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Usuário do token não existe mais"));
+    }
+
+    private UsuarioResponse resposta(Usuario usuario) {
+        return UsuarioResponse.de(usuario, operadores.isOperador(usuario.getId()));
     }
 
     private static String normalizarEmail(String email) {
