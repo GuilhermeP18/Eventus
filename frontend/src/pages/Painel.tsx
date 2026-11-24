@@ -25,6 +25,12 @@ export function Painel() {
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroForm, setErroForm] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [erroSenha, setErroSenha] = useState<string | null>(null);
+  const [sucessoSenha, setSucessoSenha] = useState(false);
+  const [alterandoSenha, setAlterandoSenha] = useState(false);
 
   const retry = () => {
     setLoading(true);
@@ -72,6 +78,28 @@ export function Painel() {
     }
   };
 
+  const handlePasswordSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErroSenha(null);
+    setSucessoSenha(false);
+    if (novaSenha !== confirmarSenha) {
+      setErroSenha('A confirmação da nova senha não confere.');
+      return;
+    }
+    setAlterandoSenha(true);
+    try {
+      await http.put('/auth/me/senha', { senhaAtual, novaSenha, confirmarSenha });
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setSucessoSenha(true);
+    } catch (err) {
+      setErroSenha(lerErro(err).mensagem ?? 'Não foi possível alterar a senha.');
+    } finally {
+      setAlterandoSenha(false);
+    }
+  };
+
   return (
     <>
       <div className="page-header pb-0">
@@ -100,7 +128,45 @@ export function Painel() {
       {aba === 'seguranca' && (
         <div className="card-eventus">
           <h2 className="h5">Segurança</h2>
-          <p className="text-muted mb-0">Em breve</p>
+          <h3 className="h6 mt-4">Trocar senha</h3>
+          {erroSenha && <ErrorMessage message={erroSenha} />}
+          {sucessoSenha && <div className="alert alert-success" role="status">Senha alterada com sucesso.</div>}
+          <form onSubmit={handlePasswordSubmit}>
+            <Campo
+              label="Senha atual"
+              name="senhaAtual"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+            />
+            <Campo
+              label="Nova senha"
+              name="novaSenha"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={72}
+              required
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+            />
+            <Campo
+              label="Confirmar nova senha"
+              name="confirmarSenha"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={72}
+              required
+              value={confirmarSenha}
+              onChange={(e) => setConfirmarSenha(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary" disabled={alterandoSenha}>
+              {alterandoSenha ? 'Alterando...' : 'Alterar senha'}
+            </button>
+          </form>
         </div>
       )}
 

@@ -18,4 +18,5 @@ export interface Perfil {
   cpf: string;
   dataNascimento: string;
   endereco: Endereco;
+  operador: boolean;
 }

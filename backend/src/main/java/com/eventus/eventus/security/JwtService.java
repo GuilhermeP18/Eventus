@@ -17,6 +17,9 @@ import java.util.Optional;
 @Service
 public class JwtService {
 
+    public record Identidade(String email, Long usuarioId) {
+    }
+
     private final SecretKey chave;
     private final Duration validade;
     private final Clock clock;
@@ -29,10 +32,11 @@ public class JwtService {
         this.clock = clock;
     }
 
-    public String gerar(String email) {
+    public String gerar(String email, Long usuarioId) {
         Instant agora = clock.instant();
         return Jwts.builder()
                 .subject(email)
+                .claim("uid", usuarioId)
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(agora.plus(validade)))
                 .signWith(chave)
@@ -41,9 +45,19 @@ public class JwtService {
 
     /** Devolve o e-mail do token, ou vazio se o token for inválido ou expirado. */
     public Optional<String> extrairEmail(String token) {
+        return extrairIdentidade(token).map(Identidade::email);
+    }
+
+    public Optional<Identidade> extrairIdentidade(String token) {
         try {
-            return Optional.ofNullable(Jwts.parser().verifyWith(chave).build()
-                    .parseSignedClaims(token).getPayload().getSubject());
+            var claims = Jwts.parser().verifyWith(chave).build().parseSignedClaims(token).getPayload();
+            String email = claims.getSubject();
+            if (email == null) {
+                return Optional.empty();
+            }
+            Object id = claims.get("uid");
+            Long usuarioId = id instanceof Number number ? number.longValue() : null;
+            return Optional.of(new Identidade(email, usuarioId));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

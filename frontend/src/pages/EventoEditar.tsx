@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
 import { lerErro } from '../api/erros';
 import { http } from '../api/http';
 import { enviarImagem, mensagemErroImagem } from '../api/imagem';
@@ -7,9 +8,11 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { FormularioEvento } from '../components/FormularioEvento';
 import { Loading } from '../components/Loading';
 import type { Evento, EventoRequest } from '../types/evento';
+import { podeEditarEvento } from '../utils/eventos';
 
 export function EventoEditar() {
   const { id } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,11 @@ export function EventoEditar() {
     }
     navigate(`/eventos/${id}`);
   };
+
+  // Só redireciona com o evento carregado e o id do usuário conhecido (ele chega com GET /auth/me).
+  if (evento && user?.id !== undefined && !podeEditarEvento(user, evento)) {
+    return <Navigate to={`/eventos/${id}`} replace />;
+  }
 
   return (
     <div className="row justify-content-center">

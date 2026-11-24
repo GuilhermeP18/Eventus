@@ -8,6 +8,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,8 +36,8 @@ public class EventoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventoResponse criar(@Valid @RequestBody EventoRequest req) {
-        return service.criar(req);
+    public EventoResponse criar(Authentication auth, @Valid @RequestBody EventoRequest req) {
+        return service.criar(auth.getName(), req);
     }
 
     @GetMapping
@@ -50,14 +51,15 @@ public class EventoController {
     }
 
     @PutMapping("/{id}")
-    public EventoResponse atualizar(@PathVariable Long id, @Valid @RequestBody EventoRequest req) {
-        return service.atualizar(id, req);
+    public EventoResponse atualizar(Authentication auth, @PathVariable Long id, @Valid @RequestBody EventoRequest req) {
+        return service.atualizar(id, auth.getName(), req);
     }
 
     @PutMapping("/{id}/imagem")
-    public EventoResponse enviarImagem(@PathVariable Long id, @RequestParam("arquivo") MultipartFile arquivo)
+    public EventoResponse enviarImagem(Authentication auth, @PathVariable Long id,
+                                       @RequestParam("arquivo") MultipartFile arquivo)
             throws IOException {
-        return service.salvarImagem(id, arquivo);
+        return service.salvarImagem(id, auth.getName(), arquivo);
     }
 
     @GetMapping("/{id}/imagem")
