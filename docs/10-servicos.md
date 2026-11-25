@@ -22,9 +22,16 @@ Não há credenciais de banco a configurar: o H2 é de uso estritamente local, c
 
 ## 📌 Rotas da API (Backend)
 
-| Método | Endpoint | Acesso | Descrição |
-| :---: | :--- | :---: | :--- |
-| `GET` | `/api/v1/test` | Público | Endpoint de verificação de status (*Health Check*) da API. |
+A API tem 18 endpoints, em seis grupos. A lista completa, com parâmetros, JSON e erros, está em [03-api-e-interfaces.md](03-api-e-interfaces.md).
+
+| Grupo | Prefixo | Acesso |
+| :--- | :--- | :--- |
+| Autenticação e perfil | `/api/v1/auth` | Cadastro e login públicos; perfil e troca de senha exigem login |
+| Eventos | `/api/v1/eventos` | Listar e detalhar são públicos; criar exige login; editar e trocar a imagem só o criador |
+| Inscrições | `/api/v1/eventos/{id}/inscricoes` e `/api/v1/inscricoes` | Exige login |
+| Portaria | `/api/v1/portaria` | Só operadores |
+| Dependentes | `/api/v1/dependentes` | Exige login |
+| Teste (*Health Check*) | `/api/v1/test` | Público |
 
 ---
 

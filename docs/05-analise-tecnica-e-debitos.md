@@ -51,8 +51,6 @@ Uma busca por `TODO`, `FIXME`, `XXX` e `HACK` em `backend/src` e `frontend/src` 
 | D7 | **Frontend sem testes automatizados** | `frontend/package.json` não tem script `test` nem biblioteca de teste. Detalhes na Parte 5, seção 6.1. | A única verificação automática é `npm run lint` e `npm run build` (com checagem de tipos). Regras do frontend, como a máscara de campos e o `podeEditarEvento`, não têm teste. | Adicionar uma biblioteca de testes e cobrir primeiro o `AuthProvider`, os utilitários (`utils/`) e as telas de login e inscrição. |
 | D8 | **Code smells listados na Parte 4** | Parte 4, seção 11 (`JwtService.extrairEmail` sem uso, métodos de repositório sem uso, `AuthController.emailLogado` redundante, mensagem fixa no `429`). | Código morto e duplicado. | Ver a sugestão de cada item na própria Parte 4. |
 
-> A Parte 4, seção 11, cita uma linha duplicada de `setError(null)` em `Home.tsx`. Ao conferir para esta Parte, **não encontrei a duplicação** (`Home.tsx:20` tem uma só). Não repito o item aqui. Ver a seção 7 sobre a correção da Parte 4.
-
 ### 2.2 Itens adicionais
 
 | # | Item | Onde está | Impacto | Sugestão de correção |
@@ -167,12 +165,3 @@ Em ordem de prioridade sugerida, sem prazos. A ordem considera o risco para os d
 | 8 | Adicionar testes automatizados ao frontend | Hoje só há lint e build | D7 |
 | 9 | Endurecer a entrega: cabeçalhos de segurança e HTTPS no Nginx, análise de dependências, SQL no log só em `dev`, mensagem de conflito correta | Melhorias de segurança e operação de menor impacto | Seção 3.2, D10, D13 |
 
----
-
-## 7. Correções necessárias em outras Partes
-
-Ao conferir os dados para esta Parte, encontrei uma afirmação das Partes anteriores que não se confirma:
-
-| Arquivo | Trecho | Problema |
-|---|---|---|
-| `docs/03-api-e-interfaces.md` (seção 11) | Linha "`setError(null)` repetido", `frontend/src/pages/Home.tsx`, função `retry` | A função `retry` de `Home.tsx` (linhas 18–22) tem **uma** chamada a `setError(null)`. A duplicação não existe. Para corrigir, remover essa linha da tabela. Não alterei a Parte 4 por estar fora do pedido. |

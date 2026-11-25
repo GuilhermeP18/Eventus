@@ -40,7 +40,7 @@ O sistema **não tem papéis cadastrados no banco**. Existe um único tipo de co
 | Máscaras no formulário | CPF `000.000.000-00`, telefone `(00) 00000-0000`, CEP `00000-000`, UF em lista com as 27 siglas. Os erros aparecem depois que o campo perde o foco ou ao enviar. | `utils/mascaras.ts`, `utils/estados.ts`, `hooks/useErrosVisiveis.ts` |
 | Login | Devolve um token JWT do tipo `Bearer`, válido por 60 minutos. A mensagem de erro não diz se foi o e-mail ou a senha. | `POST /api/v1/auth/login`, tela `/login` |
 | Bloqueio por tentativas | 5 falhas seguidas no mesmo e-mail bloqueiam o login por 15 minutos (`429`). O controle fica em memória e é zerado ao reiniciar o backend. | `TentativasLoginService` |
-| Perfil | Consulta e edição de nome, telefone, data de nascimento e endereço. E-mail e CPF não podem ser alterados. | `GET/PUT /api/v1/auth/me`, aba "Dados" do `/painel` |
+| Perfil | Consulta e edição de nome, telefone, data de nascimento e endereço. E-mail e CPF não podem ser alterados. | `GET/PUT /api/v1/auth/me`, aba "Dados pessoais" do `/painel` |
 | Troca de senha | Exige a senha atual, confirmação igual e nova senha diferente da atual (8 a 72 caracteres). | `PUT /api/v1/auth/me/senha`, aba "Segurança" do `/painel` |
 | Sessão no navegador | O token e o e-mail ficam no `localStorage`. Ao abrir o site, o front chama `GET /auth/me`; se a resposta for `401`, faz logout. | `auth/AuthProvider.tsx` |
 

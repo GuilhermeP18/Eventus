@@ -175,7 +175,7 @@ No `localStorage` ficam só o token e o e-mail. Nome, id e a flag `operador` che
 Eventus/
 ├── .env.example                 # Modelo das variáveis usadas pelo Docker Compose
 ├── .gitattributes
-├── .gitignore                   # Ignora .env, data/ do H2, target/, node_modules etc.
+├── .gitignore                   # Ignora .env, data/ do H2, target/ etc. (node_modules: ver frontend/.gitignore)
 ├── .github/workflows/
 │   ├── ci.yml                   # Build e testes do backend; lint e build do frontend
 │   └── branch-name.yml          # Valida o padrão de nome das branches
@@ -263,7 +263,7 @@ Eventus/
 | `/eventos/novo` | `NovoEvento` | Logado |
 | `/eventos/:id/editar` | `EventoEditar` | Logado; redireciona quem não é o criador |
 | `/meus-ingressos` | `MeusIngressos` | Logado |
-| `/painel` | `Painel` (abas Dependentes, Dados e Segurança) | Logado |
+| `/painel` | `Painel` (abas Dependentes, Dados pessoais e Segurança) | Logado |
 | `/portaria` | `Portaria` | Logado; a API só responde para operadores |
 | `*` | `NaoEncontrada` | Público |
 

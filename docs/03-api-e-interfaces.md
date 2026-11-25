@@ -507,7 +507,7 @@ Rotas definidas em `frontend/src/App.tsx` (React Router 7). Todas ficam dentro d
 | `/eventos/novo` | `NovoEvento` | Logado | `FormularioEvento` | `POST /eventos`, depois `PUT /eventos/{id}/imagem` se houver imagem |
 | `/eventos/:id/editar` | `EventoEditar` | Logado; redireciona para `/eventos/:id` quem não é o criador | `FormularioEvento` | `GET /eventos/{id}`, `PUT /eventos/{id}`, `PUT /eventos/{id}/imagem` |
 | `/meus-ingressos` | `MeusIngressos` | Logado | `CardIngresso` | `GET /inscricoes/minhas` |
-| `/painel` | `Painel` (abas Dependentes, Dados e Segurança) | Logado | `DadosPessoais`, `Campo` | `GET /dependentes`, `POST /dependentes`, `PUT /auth/me/senha`; no `DadosPessoais`: `GET /auth/me`, `PUT /auth/me` |
+| `/painel` | `Painel` (abas Dependentes, Dados pessoais e Segurança) | Logado | `DadosPessoais`, `Campo` | `GET /dependentes`, `POST /dependentes`, `PUT /auth/me/senha`; no `DadosPessoais`: `GET /auth/me`, `PUT /auth/me` |
 | `/portaria` | `Portaria` | Logado; o link na `Navbar` só aparece se `user.operador`, e a API recusa não operadores com `403` | `LinhaPortaria` | `GET /portaria/busca?q=`, `POST /portaria/inscricoes/{id}/checkin` |
 | `*` | `NaoEncontrada` | Público | — | — |
 
@@ -599,6 +599,5 @@ Uma busca por `TODO`, `FIXME`, `XXX` e `HACK` em `backend/src` e `frontend/src` 
 | `JwtService.extrairEmail` | `security/JwtService.java` | Método público sem nenhuma chamada. O filtro usa `extrairIdentidade`. |
 | `InscricaoRepository.findByCodigo` e `findByEventoIdAndUsuarioId` | `repository/InscricaoRepository.java` | Sem uso. O check-in é feito pelo id, não pelo código. |
 | Verificação manual de autenticação | `AuthController.emailLogado` | Redundante com o `SecurityConfig`, e aplicada só no `AuthController`. |
-| `setError(null)` repetido | `frontend/src/pages/Home.tsx`, função `retry` | Linha duplicada, sem efeito. |
 | Mensagem do `429` fixa | `frontend/src/pages/Login.tsx` | Ignora o tempo restante informado pela API. |
 | Endpoints ausentes | — | Cancelar inscrição, excluir evento, editar ou excluir dependente, logout no servidor, recuperação de senha, indicadores. |
