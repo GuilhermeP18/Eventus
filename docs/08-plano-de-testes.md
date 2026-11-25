@@ -11,7 +11,7 @@ Validar o sistema **Eventus** de forma abrangente nos dois lados da aplicação:
 
 - **Backend (`backend/`):** suíte automatizada em JUnit 5 + Mockito + MockMvc no perfil `test` (`H2` em memória via `backend/src/test/resources/application-test.properties`), complementada por execução regressiva e negativa via HTTP contra `/api/v1`.
 - **Frontend (`frontend/`):** validação estática (`eslint`), checagem de tipos e build (`tsc -b && vite build`), além de verificação funcional das rotas, guardas de autenticação, validações de formulário, tratamento de erros da API e aderência às telas do fluxo de aceite.
-- **Rastreabilidade de defeitos:** divergências funcionais ou lacunas não são mascaradas nem alteradas silenciosamente em produção; ficam registradas em `docs/qa/relatorio-e-evidencias.md` para abertura de Issues separadas.
+- **Rastreabilidade de defeitos:** divergências funcionais ou lacunas não são mascaradas nem alteradas silenciosamente em produção; ficam registradas em `docs/09-relatorio-e-evidencias.md` para abertura de Issues separadas.
 
 ---
 
