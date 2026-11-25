@@ -11,7 +11,7 @@ Validar o sistema **Eventus** de forma abrangente nos dois lados da aplicação:
 
 - **Backend (`backend/`):** suíte automatizada em JUnit 5 + Mockito + MockMvc no perfil `test` (`H2` em memória via `backend/src/test/resources/application-test.properties`), complementada por execução regressiva e negativa via HTTP contra `/api/v1`.
 - **Frontend (`frontend/`):** validação estática (`eslint`), checagem de tipos e build (`tsc -b && vite build`), além de verificação funcional das rotas, guardas de autenticação, validações de formulário, tratamento de erros da API e aderência às telas do fluxo de aceite.
-- **Rastreabilidade de defeitos:** divergências funcionais ou lacunas não são mascaradas nem alteradas silenciosamente em produção; ficam registradas em `docs/qa/relatorio-e-evidencias.md` para abertura de Issues separadas.
+- **Rastreabilidade de defeitos:** divergências funcionais ou lacunas não são mascaradas nem alteradas silenciosamente em produção; ficam registradas em `docs/09-relatorio-e-evidencias.md` para abertura de Issues separadas.
 
 ---
 
@@ -26,7 +26,7 @@ Validar o sistema **Eventus** de forma abrangente nos dois lados da aplicação:
 | **Dependentes** | `GET/POST /api/v1/dependentes` | Exigência de JWT, validação de `@NotBlank` e `@Past`, ordenação alfabética por nome e isolamento por responsável |
 | **Eventos e Mídia** | `GET/POST /api/v1/eventos`, `GET/PUT /api/v1/eventos/{id}`, `GET/PUT /api/v1/eventos/{id}/imagem` | Listagem pública ordenada por data, validação de janela de inscrição e capacidade mínima, upload JPG/PNG/WEBP (até 2 MB) e preservação da capa na edição |
 | **Inscrições** | `POST /api/v1/eventos/{id}/inscricoes`, `GET /api/v1/inscricoes/minhas` | Período de inscrição, controle de capacidade/lotação, unicidade por usuário no evento, código único `[A-Z0-9]{8}` e listagem restrita ao usuário logado |
-| **Portaria / Check-in** | `GET /api/v1/portaria/busca`, `POST /api/v1/portaria/inscricoes/{id}/checkin` | Rejeição de busca vazia (`400`), consulta por código/nome/CPF/e-mail, registro único de presença (`409` na repetição) e auditoria de check-in |
+| **Portaria / Check-in** | `GET /api/v1/portaria/busca`, `POST /api/v1/portaria/inscricoes/{id}/checkin` | Rejeição de busca vazia (`400`), consulta por código, CPF e nome, registro único de presença (`409` na repetição) e auditoria de check-in |
 | **Dashboard** | Endpoints de métricas/indicadores por evento | Derivação de inscritos, cancelados, presentes e vagas restantes a partir dos registros persistidos |
 
 ### 2.2 Regras de Negócio Obrigatórias no Backend

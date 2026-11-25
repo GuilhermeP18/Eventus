@@ -1,5 +1,7 @@
 # Relatório de Execução e Evidências de QA — Eventus
 
+> Registro histórico de 23/11/2026, feito em outra branch. Os números e comportamentos abaixo podem ter mudado; a situação atual está nas Partes 4 a 6.
+
 **Issue:** `#12`  
 **Data da execução:** 23/11/2026  
 **Branch avaliada:** `test/issue-12-plano-testes-evidencias` (base `main` em `9cd8ec7`)  

@@ -114,4 +114,4 @@ O briefing define 8 regras obrigatórias. A lista original cobre só parte delas
 1. **Escopo.** A lista foi escrita para venda de ingressos com pagamento. O briefing exclui isso. Confirmar que o MVP segue o briefing e que as regras "Fora de escopo" ficam como backlog futuro.
 2. **Regras fora do briefing.** Decidir o destino das 10 regras "Validar com PO", especialmente login com bloqueio e verificação de e-mail (RN003, RN004, RN006), classificação indicativa e menores (RN007 a RN010) e transferência de titularidade (RN021).
 3. **Limite por pessoa.** A RN014 (4 ingressos por CPF) conflita com a regra do briefing de uma inscrição ativa por e-mail. Qual vale?
-4. **Perguntas de descoberta.** As respostas sobre conta do participante, prazo de cancelamento, dados mínimos e formato do código (ver `respostas-cliente.md`) mudam várias regras acima.
+4. **Perguntas de descoberta.** As respostas sobre conta do participante, prazo de cancelamento, dados mínimos e formato do código mudam várias regras acima.
